@@ -1,0 +1,13 @@
+{
+  "name": "placement-cell-app",
+  "version": "1.0.0",
+  "description": "Placement Cell Application",
+  "scripts": {
+    "start": "npx --yes http-server ./Placement-Cell-App -p 8080"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "express": "^5.2.1",
+    "puppeteer": "^25.8.0"
+  }
+}
