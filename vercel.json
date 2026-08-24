@@ -1,0 +1,13 @@
+﻿{
+  "version": 2,
+  "name": "marian-college-placement-cell",
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/teacher", "destination": "/teacher.html" },
+    { "source": "/student", "destination": "/student.html" },
+    { "source": "/coordinator", "destination": "/coordinator.html" },
+    { "source": "/manage-training", "destination": "/manage-training.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/", "destination": "/index.html" }
+  ]
+}
