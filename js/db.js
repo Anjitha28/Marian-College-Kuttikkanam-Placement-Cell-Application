@@ -369,6 +369,7 @@ class Database {
                 }
                 throw error;
             }
+            console.log(`[Supabase Cloud] Successfully synced ${tableName} to cloud database.`);
             localStorage.setItem('db_cache', JSON.stringify(this.cache));
             return { success: true, message: 'Synced with cloud.' };
         } catch (e) {
