@@ -1,19 +1,18 @@
 // admin.js
-// Handles UI logic for Admin Dashboard
+// Handles UI logic for Marian College Kuttikkanam Admin & Coordinator Portals
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Route UI Synchronously before DB loads to prevent ANY dashboard flash
+    // 1. Synchronous early UI routing
     try {
         handleRouting(true); 
     } catch(e) {
         console.warn("Early UI routing failed:", e);
     }
 
-    // 2. Wait for Google Sheets / Supabase data to sync
+    // 2. Wait for Supabase / Local storage DB ready
     await db.ready;
 
-    // 2.5 Force clear search inputs to prevent aggressive browser autofill 
-    // from injecting usernames (like "admin") and causing empty tables.
+    // Clear search inputs to prevent browser autofill issues
     const stSearch = document.getElementById('searchStudent');
     const tcSearch = document.getElementById('searchTeacher');
     if (stSearch) stSearch.value = '';
@@ -22,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userRole = sessionStorage.getItem('userRole') || 'admin';
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
 
-    // Check for forced password reset
+    // Password reset checks for coordinators
     const isTeacherCoord = userRole === 'teacherCoordinator';
     const isStudentCoord = userRole === 'studentCoordinator';
     if ((isTeacherCoord || isStudentCoord) && (currentUser.forcePasswordReset || currentUser.password === 'password')) {
@@ -57,44 +56,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.openModal = function(modal) {
         if (!modal) return;
         modal.classList.remove('hidden');
-        modal.style.opacity = '0';
-        modal.offsetHeight; // Force reflow
-        modal.style.opacity = '1';
     };
 
     window.closeModal = function(modal) {
         if (!modal) return;
-        modal.style.opacity = '0';
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 250);
+        modal.classList.add('hidden');
     };
 
-    window.animateCount = function(elementId, endValue) {
-        const el = document.getElementById(elementId);
-        if (!el) return;
-        const end = parseInt(endValue) || 0;
-        if (end === 0) { el.textContent = '0'; return; }
-        let start = 0;
-        const duration = 800;
-        const startTime = performance.now();
-        
-        function update(currentTime) {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const ease = progress * (2 - progress);
-            const current = Math.floor(ease * end);
-            el.textContent = current;
-            if (progress < 1) {
-                requestAnimationFrame(update);
-            } else {
-                el.textContent = end;
-            }
-        }
-        requestAnimationFrame(update);
-    };
-
-    // Update UI title and header info
+    // Header info & Role branding
     const sidebarBrand = document.querySelector('.sidebar-brand');
     const userNameEl = document.querySelector('.user-name');
     const userRoleEl = document.querySelector('.user-role');
@@ -109,40 +78,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (userRoleEl) userRoleEl.textContent = 'Student Coordinator';
         if (userAvatarEl) userAvatarEl.textContent = (currentUser.name || 'C')[0];
 
-        // Hide User Management link from sidebar
         const userMgmtLink = document.querySelector('[data-tab="userManagement"]');
-        if (userMgmtLink) {
+        if (userMgmtLink && userMgmtLink.parentElement) {
             userMgmtLink.parentElement.style.display = 'none';
         }
 
-        // Hide add/create buttons
-        const addTrnBtn = document.getElementById('toggleAddTrainingBtn');
-        if (addTrnBtn) addTrnBtn.style.display = 'none';
         const addPlcBtn = document.getElementById('toggleAddPlacementBtn');
         if (addPlcBtn) addPlcBtn.style.display = 'none';
-        const addRecBtn = document.getElementById('toggleAddRecruitmentBtn');
-        if (addRecBtn) addRecBtn.style.display = 'none';
         const addPhaseBtn = document.getElementById('addPhaseBtn');
         if (addPhaseBtn) addPhaseBtn.style.display = 'none';
 
-        // Hide admin-only fields like Promote to Coordinator in modals
         document.querySelectorAll('.admin-only-field').forEach(el => el.style.setProperty('display', 'none', 'important'));
     } else if (userRole === 'teacherCoordinator') {
         if (sidebarBrand) {
-            sidebarBrand.textContent = 'Teacher Coordinator Portal';
+            sidebarBrand.textContent = 'Teacher Coordinator';
             sidebarBrand.href = 'admin.html';
         }
         if (userNameEl) userNameEl.textContent = `Welcome, ${currentUser.name || 'Coordinator'}`;
         if (userRoleEl) userRoleEl.textContent = 'Teacher Coordinator';
         if (userAvatarEl) userAvatarEl.textContent = (currentUser.name || 'T')[0];
 
-        // Hide Manage Teachers subtab button
         const teacherTabBtn = document.querySelector('[data-subtab="teachersSubTab"]');
         if (teacherTabBtn) teacherTabBtn.style.display = 'none';
         const addTeacherBtn = document.getElementById('toggleAddTeacherBtn');
         if (addTeacherBtn) addTeacherBtn.style.display = 'none';
 
-        // Hide admin-only fields like Promote to Coordinator in modals
         document.querySelectorAll('.admin-only-field').forEach(el => el.style.setProperty('display', 'none', 'important'));
     } else {
         if (sidebarBrand) {
@@ -150,13 +110,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             sidebarBrand.href = 'admin.html';
         }
         if (userNameEl) userNameEl.textContent = 'Welcome, Admin';
-        if (userRoleEl) userRoleEl.textContent = 'Admin';
+        if (userRoleEl) userRoleEl.textContent = 'Administrator';
         if (userAvatarEl) userAvatarEl.textContent = 'A';
     }
 
-    // --- UI State & Navigation ---
+    // --- UI Navigation ---
     const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
     
     function activateTab(tabId, uiOnly = false) {
         const tab = document.querySelector(`.tab[data-tab="${tabId}"]`);
@@ -170,10 +129,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         tab.classList.add('active');
         tabContent.classList.add('active');
         
-        // Scroll to top when navigating to a new section
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // Update breadcrumb and title
         const breadcrumb = document.querySelector('.breadcrumb');
         const pageTitle = document.querySelector('.page-title');
         
@@ -193,9 +150,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 renderStudents();
                 renderTeachers();
             }
-            if(tabId === 'training') {
-                renderTrainingPrograms();
-            }
             if(tabId === 'calendar') {
                 initCalendarSelectors();
                 renderCalendar();
@@ -205,9 +159,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             if(tabId === 'classView') {
                 renderClassView();
-            }
-            if(tabId === 'mcq') {
-                renderMCQ();
             }
         } catch (e) {
             console.warn(`Error rendering tab ${tabId}:`, e);
@@ -241,7 +192,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     }
-    // --- Sub-Tab Logic (User Management) ---
+
+    // Sub-Tabs
     const subTabs = document.querySelectorAll('.sub-tab');
     const subTabContents = document.querySelectorAll('.sub-tab-content');
     
@@ -249,13 +201,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         tab.addEventListener('click', () => {
             const tabId = tab.dataset.subtab;
             const tabContent = document.getElementById(tabId);
-            
             if (!tabContent) return;
 
             subTabs.forEach(t => t.classList.remove('active'));
             subTabContents.forEach(c => {
                 c.classList.remove('active');
-                c.classList.add('hidden'); // Add hidden to non-active sub-tabs
+                c.classList.add('hidden');
             });
             
             tab.classList.add('active');
@@ -264,9 +215,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // Calendar Selectors
     function initCalendarSelectors() {
         const monthSel = document.getElementById('calMonth');
         const yearSel = document.getElementById('calYear');
+        if(!monthSel || !yearSel) return;
         if(!monthSel.innerHTML) {
             const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             monthSel.innerHTML = months.map((m, i) => `<option value="${i}" ${i === new Date().getMonth() ? 'selected' : ''}>${m}</option>`).join('');
@@ -281,7 +234,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- Students Management ---
+    // =========================================================================
+    // --- 1. STUDENTS MANAGEMENT ---
+    // =========================================================================
+    let editingRegNo = null;
     const toggleAddStudentBtn = document.getElementById('toggleAddStudentBtn');
     const cancelAddStudentBtn = document.getElementById('cancelAddStudentBtn');
     const closeStudentModalBtn = document.getElementById('closeStudentModalBtn');
@@ -294,90 +250,91 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (toggleAddStudentBtn) {
         toggleAddStudentBtn.addEventListener('click', () => {
             editingRegNo = null;
-            addStudentForm.reset();
-            studentModalTitle.textContent = 'Add New Student';
-            saveStudentBtn.textContent = 'Save Student Profile';
+            if (addStudentForm) addStudentForm.reset();
+            if (studentModalTitle) studentModalTitle.textContent = 'Add New Student';
+            if (saveStudentBtn) saveStudentBtn.textContent = 'Save Student Profile';
             openModal(studentModal);
         });
     }
 
     if (cancelAddStudentBtn) {
         cancelAddStudentBtn.addEventListener('click', () => {
-            studentModal.classList.add('hidden');
-            addStudentForm.reset();
+            closeModal(studentModal);
+            if (addStudentForm) addStudentForm.reset();
         });
     }
 
     if (closeStudentModalBtn) {
         closeStudentModalBtn.addEventListener('click', () => {
-            studentModal.classList.add('hidden');
-            addStudentForm.reset();
+            closeModal(studentModal);
+            if (addStudentForm) addStudentForm.reset();
         });
     }
 
-    addStudentForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.disabled = true;
-        
-        try {
-            if (!Permissions.can(userRole, 'edit_people')) {
-                alert("Permission denied.");
-                return;
-            }
+    if (addStudentForm) {
+        addStudentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+            
+            try {
+                if (!Permissions.can(userRole, 'edit_people')) {
+                    alert("Permission denied.");
+                    return;
+                }
 
-            const student = {
-                name: document.getElementById('sName').value.trim(),
-                registerNumber: document.getElementById('sRegNo').value.trim(),
-                phoneNumber: document.getElementById('sPhone').value.trim(),
-                mailId: document.getElementById('sMail').value.trim(),
-                course: document.getElementById('sCourse').value.trim(),
-                department: document.getElementById('sDept').value.trim(),
-                class: document.getElementById('sClass') ? document.getElementById('sClass').value.trim() : '',
-                admissionYear: document.getElementById('sAdmnYear') ? document.getElementById('sAdmnYear').value.trim() : '',
-                gender: document.getElementById('sGender').value,
-                password: (document.getElementById('sPass').value || 'password').trim(),
-                isCoordinator: document.getElementById('sIsCoordinator') ? document.getElementById('sIsCoordinator').checked : false
-            };
+                const student = {
+                    name: document.getElementById('sName').value.trim(),
+                    registerNumber: document.getElementById('sRegNo').value.trim(),
+                    phoneNumber: document.getElementById('sPhone').value.trim(),
+                    mailId: document.getElementById('sMail').value.trim(),
+                    course: document.getElementById('sCourse').value.trim(),
+                    department: document.getElementById('sDept').value.trim(),
+                    class: document.getElementById('sClass') ? document.getElementById('sClass').value.trim() : '',
+                    admissionYear: document.getElementById('sAdmnYear') ? document.getElementById('sAdmnYear').value.trim() : '',
+                    gender: document.getElementById('sGender').value,
+                    password: (document.getElementById('sPass').value || 'password').trim(),
+                    isCoordinator: document.getElementById('sIsCoordinator') ? document.getElementById('sIsCoordinator').checked : false
+                };
 
-            if (editingRegNo) {
-                let students = db.getStudents();
-                const index = students.findIndex(s => s.registerNumber === editingRegNo);
-                if (index !== -1) {
-                    const originalStudent = students[index];
-                    if (!Permissions.can(userRole, 'manage_users')) {
-                        student.isCoordinator = originalStudent.isCoordinator;
+                if (editingRegNo) {
+                    let students = db.getStudents();
+                    const index = students.findIndex(s => s.registerNumber === editingRegNo);
+                    if (index !== -1) {
+                        const originalStudent = students[index];
+                        if (!Permissions.can(userRole, 'manage_users')) {
+                            student.isCoordinator = originalStudent.isCoordinator;
+                        }
+                        students[index] = { ...originalStudent, ...student };
+                        const result = await db.saveStudents(students);
+                        if (result.success) {
+                            showAdminAlert('Student updated successfully', 'success');
+                            addStudentForm.reset();
+                            closeModal(studentModal);
+                            renderStudents();
+                        } else {
+                            showAdminAlert(result.message || 'Error updating student', 'danger');
+                        }
                     }
-                    students[index] = { ...originalStudent, ...student };
-                    const result = await db.saveStudents(students);
+                    editingRegNo = null;
+                } else {
+                    const result = await db.addStudent(student);
+                    showAdminAlert(result.message, result.success ? 'success' : 'danger');
                     if (result.success) {
-                        showAdminAlert('Student updated successfully', 'success');
                         addStudentForm.reset();
                         closeModal(studentModal);
                         renderStudents();
-                    } else {
-                        showAdminAlert(result.message || 'Error updating student', 'danger');
                     }
                 }
-                editingRegNo = null;
-            } else {
-                const result = await db.addStudent(student);
-                showAdminAlert(result.message, result.success ? 'success' : 'danger');
-                if (result.success) {
-                    addStudentForm.reset();
-                    closeModal(studentModal);
-                    renderStudents();
-                }
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
             }
-        } finally {
-            if (submitBtn) submitBtn.disabled = false;
-        }
-    });
+        });
+    }
 
-    // Delete Student Global Function
     window.deleteStudent = async (regNo) => {
         if (!Permissions.can(userRole, 'edit_people')) return;
-        if (confirm("Are you sure you want to delete this student?")) {
+        if (confirm("Are you sure you want to delete this student profile?")) {
             const result = await db.deleteStudent(regNo);
             if (result.success) {
                 renderStudents();
@@ -385,11 +342,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
+    window.editStudent = (regNo) => {
+        const student = db.getStudents().find(s => s.registerNumber === regNo);
+        if (!student) return;
+        editingRegNo = regNo;
+        document.getElementById('sName').value = student.name;
+        document.getElementById('sRegNo').value = student.registerNumber;
+        document.getElementById('sPhone').value = student.phoneNumber;
+        document.getElementById('sMail').value = student.mailId;
+        document.getElementById('sCourse').value = student.course;
+        document.getElementById('sDept').value = student.department;
+        if (document.getElementById('sClass')) document.getElementById('sClass').value = student.class || '';
+        if (document.getElementById('sAdmnYear')) document.getElementById('sAdmnYear').value = student.admissionYear || '';
+        document.getElementById('sGender').value = student.gender || 'Male';
+        if (document.getElementById('sIsCoordinator')) document.getElementById('sIsCoordinator').checked = (student.isCoordinator === true || student.isCoordinator === 'true');
+        
+        if (studentModalTitle) studentModalTitle.textContent = 'Edit Student Profile';
+        if (saveStudentBtn) saveStudentBtn.textContent = 'Update Student';
+        openModal(studentModal);
+    };
+
     function renderStudents() {
         const students = db.getStudents();
         const tbody = document.querySelector('#studentsTable tbody');
+        if (!tbody) return;
         
-        // Populate Filter Dropdowns
         populateFilters(students);
 
         const filterCourse = document.getElementById('filterCourse').value;
@@ -397,65 +374,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         const filterAdmnYearEl = document.getElementById('filterAdmnYear');
         const filterAdmnYear = filterAdmnYearEl ? filterAdmnYearEl.value : '';
 
-        let filteredStudents = students;
-        if (filterCourse) {
-            filteredStudents = filteredStudents.filter(s => s.course === filterCourse);
-        }
-        if (filterDept) {
-            filteredStudents = filteredStudents.filter(s => s.department === filterDept);
-        }
-        if (filterAdmnYear) {
-            filteredStudents = filteredStudents.filter(s => s.admissionYear === filterAdmnYear);
-        }
+        let filtered = students;
+        if (filterCourse) filtered = filtered.filter(s => s.course === filterCourse);
+        if (filterDept) filtered = filtered.filter(s => s.department === filterDept);
+        if (filterAdmnYear) filtered = filtered.filter(s => s.admissionYear === filterAdmnYear);
 
-        const searchQuery = document.getElementById('searchStudent').value.toLowerCase();
+        const searchQuery = (document.getElementById('searchStudent').value || '').toLowerCase();
         if (searchQuery) {
-            filteredStudents = filteredStudents.filter(s => 
-                s.name.toLowerCase().includes(searchQuery) || 
-                s.registerNumber.toLowerCase().includes(searchQuery) ||
-                (s.admissionYear && s.admissionYear.toLowerCase().includes(searchQuery))
+            filtered = filtered.filter(s => 
+                (s.name || '').toLowerCase().includes(searchQuery) || 
+                (s.registerNumber || '').toLowerCase().includes(searchQuery)
             );
         }
 
         tbody.innerHTML = '';
         
-        if (filteredStudents.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9">
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="10">
                 <div class="empty-state">
-                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 12h2v5H7zm4-3h2v8h-2zm4-3h2v11h-2z"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
                     <h5>No Student Records Found</h5>
-                    <p style="margin:0;">There are no records matching your query or the list is currently empty.</p>
+                    <p style="margin:0;">No records matched your search filter criteria.</p>
                 </div>
             </td></tr>`;
             return;
         }
         
-        filteredStudents.forEach(s => {
+        filtered.forEach(s => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td style="font-weight: 400;">${s.registerNumber}</td>
-                <td>${s.name} ${s.isCoordinator === true || s.isCoordinator === 'true' ? '<span class="coord-badge">Coord</span>' : ''}</td>
+                <td style="font-weight: 700; color: #0B1F3A;">${s.registerNumber}</td>
+                <td><strong>${s.name}</strong> ${s.isCoordinator === true || s.isCoordinator === 'true' ? '<span class="coord-badge">Coord</span>' : ''}</td>
                 <td>${s.phoneNumber}</td>
                 <td>${s.mailId}</td>
                 <td>${s.course}</td>
                 <td>${s.department}</td>
                 <td>${s.class || '—'}</td>
                 <td>${s.admissionYear || '—'}</td>
-                <td>${s.gender}</td>
+                <td>${s.gender || '—'}</td>
                 <td>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-secondary btn-sm" onclick="viewStudent('${s.registerNumber}')" title="View">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="editStudent('${s.registerNumber}')" title="Edit">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="resetPassword('${s.registerNumber}')" title="Reset Password">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.registerNumber}')" title="Delete">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        </button>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-secondary btn-sm" onclick="editStudent('${s.registerNumber}')" title="Edit">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.registerNumber}')" title="Delete">Delete</button>
                     </div>
                 </td>
             `;
@@ -463,304 +423,125 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Edit Student Function
-    let editingRegNo = null;
-    window.editStudent = (regNo) => {
-        if (!Permissions.can(userRole, 'edit_people')) {
-            alert("Permission denied.");
-            return;
-        }
-        const students = db.getStudents();
-        const s = students.find(student => student.registerNumber === regNo);
-        if (s) {
-            editingRegNo = regNo;
-            document.getElementById('sName').value = s.name;
-            document.getElementById('sRegNo').value = s.registerNumber;
-            document.getElementById('sPhone').value = s.phoneNumber;
-            document.getElementById('sMail').value = s.mailId;
-            document.getElementById('sCourse').value = s.course;
-            document.getElementById('sDept').value = s.department;
-            if (document.getElementById('sClass')) document.getElementById('sClass').value = s.class || '';
-            if (document.getElementById('sAdmnYear')) document.getElementById('sAdmnYear').value = s.admissionYear || '';
-            document.getElementById('sGender').value = s.gender;
-            document.getElementById('sPass').value = s.password;
-
-            if (document.getElementById('sIsCoordinator')) {
-                document.getElementById('sIsCoordinator').checked = s.isCoordinator === true || s.isCoordinator === 'true';
-            }
-
-            openModal(studentModal);
-            studentModalTitle.textContent = 'Edit Student Profile';
-            saveStudentBtn.textContent = 'Update Student Profile';
-        }
-    };
-
-    // View Student Function
-    window.viewStudent = (regNo) => {
-        const students = db.getStudents();
-        const s = students.find(std => std.registerNumber === regNo);
-        if(s) {
-            const container = document.getElementById('studentDetailContent');
-            container.innerHTML = `
-                <div><label class="small text-muted">Full Name</label><p><strong>${s.name}</strong></p></div>
-                <div><label class="small text-muted">Register No</label><p><strong>${s.registerNumber}</strong></p></div>
-                <div><label class="small text-muted">Course</label><p><strong>${s.course}</strong></p></div>
-                <div><label class="small text-muted">Department</label><p><strong>${s.department}</strong></p></div>
-                <div><label class="small text-muted">Admission Year</label><p><strong>${s.admissionYear || '—'}</strong></p></div>
-                <div><label class="small text-muted">Phone</label><p><strong>${s.phoneNumber}</strong></p></div>
-                <div><label class="small text-muted">Email</label><p><strong>${s.mailId}</strong></p></div>
-                <div><label class="small text-muted">Gender</label><p><strong>${s.gender}</strong></p></div>
-            `;
-            openModal(document.getElementById('studentDetailModal'));
-        }
-    };
-
-    // Toggle password visibility (mask <-> reveal)
-    window.togglePw = (el) => {
-        const code = el.querySelector('code');
-        if (!code) return;
-        if (el.dataset.shown === '1') {
-            code.textContent = '••••••••';
-            el.dataset.shown = '0';
-        } else {
-            code.textContent = el.dataset.pw || '';
-            el.dataset.shown = '1';
-        }
-    };
-
-    // Compute program duration in days (fallback when p.days is missing/invalid)
-    window.programDays = (p) => {
-        if (p && p.days && !isNaN(p.days) && Number(p.days) > 0) return Number(p.days);
-        if (p && p.date && p.endDate) {
-            const diff = Math.ceil((new Date(p.endDate) - new Date(p.date)) / 86400000) + 1;
-            if (diff > 0) return diff;
-        }
-        return 1;
-    };
-
-    // Compute attendance/completion stats for a training program
-    window.programAttendanceStats = (p, threshold = 75) => {
-        const sessions = p.sessions || [];
-        const batches = p.batches || [];
-        const reg = p.registrations || [];
-        const batchOf = (regNo) => {
-            const b = batches.find(b => (b.students || []).includes(regNo));
-            return b ? b.id : '';
-        };
-        let attended = 0, completed = 0;
-        reg.forEach(regNo => {
-            const bid = batchOf(regNo);
-            const applicable = sessions.filter(s => !s.batchId || s.batchId === bid);
-            const att = applicable.filter(s => (s.attendance || []).includes(regNo)).length;
-            const pct = applicable.length ? Math.round(att / applicable.length * 100) : 0;
-            if (att > 0) attended++;
-            if (att > 0 && pct >= threshold) completed++;
-        });
-        return { registered: reg.length, attended, notAttended: reg.length - attended, completed };
-    };
-
-    // Reset Password Function
-    window.resetPassword = async (regNo) => {
-        if (!Permissions.can(userRole, 'edit_people')) {
-            alert("Permission denied.");
-            return;
-        }
-        if(confirm(`Are you sure you want to reset password for student ${regNo}? They will be forced to change it on next login.`)) {
-            const result = await db.resetPassword('student', regNo);
-            if(result.success) {
-                showAdminAlert(result.message, 'success');
-            }
-        }
-    };
-
-    const filterCourseEl = document.getElementById('filterCourse');
-    const filterDeptEl = document.getElementById('filterDept');
-    const filterAdmnYearEl = document.getElementById('filterAdmnYear');
-    const searchStudentEl = document.getElementById('searchStudent');
-    const searchTeacherEl = document.getElementById('searchTeacher');
-    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
-
-    if(filterCourseEl) filterCourseEl.addEventListener('change', renderStudents);
-    if(filterDeptEl) filterDeptEl.addEventListener('change', renderStudents);
-    if(filterAdmnYearEl) filterAdmnYearEl.addEventListener('change', renderStudents);
-    if(searchStudentEl) searchStudentEl.addEventListener('input', renderStudents);
-    if(searchTeacherEl) searchTeacherEl.addEventListener('input', renderTeachers);
-    
-    if(resetFiltersBtn) {
-        resetFiltersBtn.addEventListener('click', () => {
-            filterCourseEl.value = '';
-            filterDeptEl.value = '';
-            if(filterAdmnYearEl) filterAdmnYearEl.value = '';
-            searchStudentEl.value = '';
-            renderStudents();
-        });
-    }
-
     function populateFilters(students) {
-        const courses = [...new Set(students.map(s => s.course))].filter(Boolean).sort();
-        const depts = [...new Set(students.map(s => s.department))].filter(Boolean).sort();
-        const years = [...new Set(students.map(s => s.admissionYear))].filter(Boolean).sort();
-
-        const currentCourse = filterCourseEl.value;
-        const currentDept = filterDeptEl.value;
-        const currentYear = filterAdmnYearEl ? filterAdmnYearEl.value : '';
-
-        filterCourseEl.innerHTML = '<option value="">All Courses</option>' + 
-            courses.map(c => `<option value="${c}" ${c === currentCourse ? 'selected' : ''}>${c}</option>`).join('');
+        const courseSel = document.getElementById('filterCourse');
+        const deptSel = document.getElementById('filterDept');
+        const yearSel = document.getElementById('filterAdmnYear');
         
-        filterDeptEl.innerHTML = '<option value="">All Departments</option>' + 
-            depts.map(d => `<option value="${d}" ${d === currentDept ? 'selected' : ''}>${d}</option>`).join('');
+        if (courseSel && courseSel.options.length <= 1) {
+            const courses = [...new Set(students.map(s => s.course).filter(Boolean))].sort();
+            courses.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                courseSel.appendChild(opt);
+            });
+            courseSel.addEventListener('change', renderStudents);
+        }
+
+        if (deptSel && deptSel.options.length <= 1) {
+            const depts = [...new Set(students.map(s => s.department).filter(Boolean))].sort();
+            depts.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                deptSel.appendChild(opt);
+            });
+            deptSel.addEventListener('change', renderStudents);
+        }
+
+        if (yearSel && yearSel.options.length <= 1) {
+            const years = [...new Set(students.map(s => s.admissionYear).filter(Boolean))].sort();
+            years.forEach(y => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                yearSel.appendChild(opt);
+            });
+            yearSel.addEventListener('change', renderStudents);
+        }
+
+        const searchInput = document.getElementById('searchStudent');
+        if (searchInput && !searchInput.dataset.bound) {
+            searchInput.dataset.bound = 'true';
+            searchInput.addEventListener('input', renderStudents);
+        }
+    }
+
+    // Bulk Upload Excel
+    const bulkUploadInput = document.getElementById('bulkUploadInput');
+    if (bulkUploadInput) {
+        bulkUploadInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
             
-        if(filterAdmnYearEl) {
-            filterAdmnYearEl.innerHTML = '<option value="">All Years</option>' + 
-                years.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
-        }
-    }
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet);
 
-    // --- Excel Upload & Template (SheetJS) ---
-    const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
-    const uploadExcelBtn = document.getElementById('uploadExcelBtn');
-    const bulkUploadFile = document.getElementById('bulkUploadFile');
-    const toggleBulkUploadBtn = document.getElementById('toggleBulkUploadBtn');
-    const bulkUploadSection = document.getElementById('bulkUploadSection');
+                    if (json.length === 0) {
+                        alert("The uploaded sheet is empty.");
+                        return;
+                    }
 
-    if(toggleBulkUploadBtn) {
-        toggleBulkUploadBtn.addEventListener('click', () => {
-            bulkUploadSection.classList.toggle('hidden');
-        });
-    }
+                    const studentsToUpload = json.map(r => ({
+                        name: String(r['Name'] || r['Student Name'] || r['FULL NAME'] || '').trim(),
+                        registerNumber: String(r['Register Number'] || r['Reg No'] || r['REGISTER NUMBER'] || '').trim(),
+                        phoneNumber: String(r['Phone'] || r['Phone Number'] || r['PHONE NUMBER'] || '').trim(),
+                        mailId: String(r['Email'] || r['Email Address'] || r['EMAIL'] || '').trim(),
+                        course: String(r['Course'] || r['COURSE'] || '').trim(),
+                        department: String(r['Department'] || r['DEPARTMENT'] || '').trim(),
+                        class: String(r['Class'] || r['CLASS'] || '').trim(),
+                        admissionYear: String(r['Admission Year'] || r['Year'] || '').trim(),
+                        gender: String(r['Gender'] || r['GENDER'] || 'Male').trim(),
+                        password: 'password'
+                    })).filter(s => s.registerNumber && s.name);
 
-    downloadTemplateBtn.addEventListener('click', () => {
-        // Create an empty worksheet with headers
-        const wsData = [
-            ["Name", "Phone Number", "Mail ID", "Register Number", "Course", "Department", "Class", "Admission Year", "Gender", "Password"],
-            ["John Doe", "9876543210", "john@example.com", "REG001", "BSc Computer Science", "Science", "1 BCA A", "2024", "Male", "pass123"]
-        ];
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Students Template");
-        
-        // Generate Excel file and trigger download
-        XLSX.writeFile(wb, "Student_Upload_Template.xlsx");
-    });
+                    if (studentsToUpload.length === 0) {
+                        alert("No valid student rows found. Required columns: Name, Register Number, Phone, Email, Course, Department.");
+                        return;
+                    }
 
-    uploadExcelBtn.addEventListener('click', () => {
-        const file = bulkUploadFile.files[0];
-        if (!file) {
-            showAdminAlert('Please select an Excel file first.', 'danger');
-            return;
-        }
+                    let existing = db.getStudents();
+                    let addedCount = 0;
+                    studentsToUpload.forEach(s => {
+                        const idx = existing.findIndex(ex => ex.registerNumber === s.registerNumber);
+                        if (idx !== -1) {
+                            existing[idx] = { ...existing[idx], ...s };
+                        } else {
+                            existing.push(s);
+                            addedCount++;
+                        }
+                    });
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                // Convert to JSON
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                
-                if (jsonData.length === 0) {
-                    showAdminAlert('The uploaded Excel file is empty.', 'danger');
-                    return;
-                }
-
-                // Map JSON headers to our object properties
-                // Expected headers from Template: Name, Phone Number, Mail ID, Register Number, Course, Department, Class, Admission Year, Gender, Password
-                const newStudents = jsonData.map(row => ({
-                    name: row['Name'] ? String(row['Name']).trim() : '',
-                    phoneNumber: row['Phone Number'] ? String(row['Phone Number']).trim() : '',
-                    mailId: row['Mail ID'] ? String(row['Mail ID']).trim() : '',
-                    registerNumber: row['Register Number'] ? String(row['Register Number']).trim() : '',
-                    course: row['Course'] ? String(row['Course']).trim() : '',
-                    department: row['Department'] ? String(row['Department']).trim() : '',
-                    class: row['Class'] ? String(row['Class']).trim() : '',
-                    admissionYear: row['Admission Year'] ? String(row['Admission Year']).trim() : '',
-                    gender: row['Gender'] ? String(row['Gender']).trim() : '',
-                    password: row['Password'] ? String(row['Password']).trim() : 'password'
-                })).filter(s => s.registerNumber && s.name); // Removed password requirement from filter
-
-                if (newStudents.length === 0) {
-                    showAdminAlert('No valid records found. Ensure columns match the template.', 'danger');
-                    return;
-                }
-
-                const result = await db.addStudentsBulk(newStudents);
-                showAdminAlert(result.message, result.success ? 'success' : 'danger');
-                
-                if (result.success) {
-                    bulkUploadFile.value = ''; // Reset file input
-                    bulkUploadSection.classList.add('hidden'); // Hide upload section after success
+                    await db.saveStudents(existing);
+                    alert(`Successfully imported ${studentsToUpload.length} students (${addedCount} new).`);
                     renderStudents();
+                } catch (err) {
+                    console.error("Bulk upload error:", err);
+                    alert("Error parsing file. Ensure it is a valid .xlsx or .csv format.");
                 }
-
-            } catch (error) {
-                console.error(error);
-                showAdminAlert('Error processing Excel file. Ensure it is a valid .xlsx format.', 'danger');
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    });
-
-    const exportStudentsBtn = document.getElementById('exportStudentsBtn');
-    if (exportStudentsBtn) {
-        exportStudentsBtn.addEventListener('click', () => {
-            const students = db.getStudents();
-            const filterCourse = document.getElementById('filterCourse').value;
-            const filterDept = document.getElementById('filterDept').value;
-            const filterAdmnYearEl = document.getElementById('filterAdmnYear');
-            const filterAdmnYear = filterAdmnYearEl ? filterAdmnYearEl.value : '';
-            const searchQuery = document.getElementById('searchStudent').value.toLowerCase();
-            
-            let filteredStudents = students;
-            if (filterCourse) filteredStudents = filteredStudents.filter(s => s.course === filterCourse);
-            if (filterDept) filteredStudents = filteredStudents.filter(s => s.department === filterDept);
-            if (filterAdmnYear) filteredStudents = filteredStudents.filter(s => s.admissionYear === filterAdmnYear);
-            if (searchQuery) {
-                filteredStudents = filteredStudents.filter(s => 
-                    s.name.toLowerCase().includes(searchQuery) || 
-                    s.registerNumber.toLowerCase().includes(searchQuery) ||
-                    (s.admissionYear && s.admissionYear.toLowerCase().includes(searchQuery))
-                );
-            }
-            
-            if (filteredStudents.length === 0) {
-                showAdminAlert('No students to export based on current filters.', 'danger');
-                return;
-            }
-            
-            const wsData = filteredStudents.map(s => ({
-                "Register Number": s.registerNumber,
-                "Name": s.name,
-                "Phone Number": s.phoneNumber,
-                "Mail ID": s.mailId,
-                "Course": s.course,
-                "Department": s.department,
-                "Class": s.class || '',
-                "Admission Year": s.admissionYear || '',
-                "Gender": s.gender,
-                "Is Coordinator": s.isCoordinator ? 'Yes' : 'No'
-            }));
-            
-            const ws = XLSX.utils.json_to_sheet(wsData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Students");
-            
-            XLSX.writeFile(wb, "Student_Export.xlsx");
+            };
+            reader.readAsArrayBuffer(file);
         });
     }
 
-    function showAdminAlert(message, type) {
-        adminAlert.textContent = message;
+    function showAdminAlert(msg, type) {
+        if (!adminAlert) return;
+        adminAlert.textContent = msg;
         adminAlert.className = `alert alert-${type} mb-3`;
         adminAlert.classList.remove('hidden');
-        setTimeout(() => adminAlert.classList.add('hidden'), 5000);
+        setTimeout(() => adminAlert.classList.add('hidden'), 4000);
     }
 
-
+    // =========================================================================
+    // --- 2. FACULTY / TEACHER MANAGEMENT ---
+    // =========================================================================
+    let editingTeacherPhone = null;
     const toggleAddTeacherBtn = document.getElementById('toggleAddTeacherBtn');
     const cancelAddTeacherBtn = document.getElementById('cancelAddTeacherBtn');
     const closeTeacherModalBtn = document.getElementById('closeTeacherModalBtn');
@@ -773,38 +554,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (toggleAddTeacherBtn) {
         toggleAddTeacherBtn.addEventListener('click', () => {
             editingTeacherPhone = null;
-            addTeacherForm.reset();
-            teacherModalTitle.textContent = 'Add New Teacher';
-            saveTeacherBtn.textContent = 'Save Teacher';
+            if (addTeacherForm) addTeacherForm.reset();
+            if (teacherModalTitle) teacherModalTitle.textContent = 'Add Faculty Member';
+            if (saveTeacherBtn) saveTeacherBtn.textContent = 'Save Faculty Profile';
             openModal(teacherModal);
         });
     }
 
-    if (cancelAddTeacherBtn) {
-        cancelAddTeacherBtn.addEventListener('click', () => {
-            teacherModal.classList.add('hidden');
-            addTeacherForm.reset();
-        });
-    }
+    if (cancelAddTeacherBtn) cancelAddTeacherBtn.addEventListener('click', () => closeModal(teacherModal));
+    if (closeTeacherModalBtn) closeTeacherModalBtn.addEventListener('click', () => closeModal(teacherModal));
 
-    if (closeTeacherModalBtn) {
-        closeTeacherModalBtn.addEventListener('click', () => {
-            teacherModal.classList.add('hidden');
-            addTeacherForm.reset();
-        });
-    }
-
-    addTeacherForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.disabled = true;
-        
-        try {
-            if (!Permissions.can(userRole, 'edit_teachers')) {
-                alert("Permission denied.");
-                return;
-            }
-
+    if (addTeacherForm) {
+        addTeacherForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             const teacher = {
                 name: document.getElementById('tName').value.trim(),
                 phoneNumber: document.getElementById('tPhone').value.trim(),
@@ -814,585 +576,422 @@ document.addEventListener('DOMContentLoaded', async () => {
                 isCoordinator: document.getElementById('tIsCoordinator') ? document.getElementById('tIsCoordinator').checked : false
             };
 
+            let result;
             if (editingTeacherPhone) {
                 let teachers = db.getTeachers();
-                const index = teachers.findIndex(t => t.phoneNumber === editingTeacherPhone);
-                if (index !== -1) {
-                    const originalTeacher = teachers[index];
-                    if (!Permissions.can(userRole, 'manage_users')) {
-                        teacher.isCoordinator = originalTeacher.isCoordinator;
-                    }
-                    teachers[index] = { ...originalTeacher, ...teacher };
-                    const result = await db.saveTeachers(teachers);
-                    if (result.success) {
-                        showTeacherAlert('Teacher updated successfully', 'success');
-                        addTeacherForm.reset();
-                        closeModal(teacherModal);
-                        renderTeachers();
-                    } else {
-                        showTeacherAlert(result.message || 'Error updating teacher', 'danger');
-                    }
+                const idx = teachers.findIndex(t => t.phoneNumber === editingTeacherPhone);
+                if (idx !== -1) {
+                    teachers[idx] = { ...teachers[idx], ...teacher };
+                    result = await db.saveTeachers(teachers);
                 }
                 editingTeacherPhone = null;
             } else {
-                const result = await db.addTeacher(teacher);
-                showTeacherAlert(result.message, result.success ? 'success' : 'danger');
-                if (result.success) {
-                    addTeacherForm.reset();
-                    closeModal(teacherModal);
-                    renderTeachers();
-                }
+                result = await db.addTeacher(teacher);
             }
-        } finally {
-            if (submitBtn) submitBtn.disabled = false;
-        }
-    });
 
-    window.deleteTeacher = async (phoneNo) => {
-        if (!Permissions.can(userRole, 'edit_teachers')) {
-            alert("Permission denied.");
-            return;
-        }
-        if(confirm('Are you sure you want to delete this teacher?')) {
-            const result = await db.deleteTeacher(phoneNo);
-            if (result.success) {
+            if (result && result.success) {
+                closeModal(teacherModal);
                 renderTeachers();
-                showTeacherAlert('Teacher deleted successfully', 'success');
             } else {
-                showTeacherAlert(result.message || 'Error deleting teacher', 'danger');
+                alert((result && result.message) || 'Error saving teacher profile.');
             }
-        }
-    };
+        });
+    }
 
     function renderTeachers() {
         const teachers = db.getTeachers();
         const tbody = document.querySelector('#teachersTable tbody');
-        
-        const searchQuery = document.getElementById('searchTeacher').value.toLowerCase();
-        let filteredTeachers = teachers;
+        if (!tbody) return;
+
+        const searchQuery = (document.getElementById('searchTeacher').value || '').toLowerCase();
+        let filtered = teachers;
         if (searchQuery) {
-            filteredTeachers = filteredTeachers.filter(t => 
-                t.name.toLowerCase().includes(searchQuery) || 
-                t.phoneNumber.toLowerCase().includes(searchQuery)
+            filtered = filtered.filter(t => 
+                (t.name || '').toLowerCase().includes(searchQuery) ||
+                (t.phoneNumber || '').toLowerCase().includes(searchQuery) ||
+                (t.department || '').toLowerCase().includes(searchQuery)
             );
         }
 
         tbody.innerHTML = '';
-        
-        if (filteredTeachers.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5">
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 12h2v5H7zm4-3h2v8h-2zm4-3h2v11h-2z"/></svg>
-                    <h5>No Teacher Records Found</h5>
-                    <p style="margin:0;">There are no records matching your query or the list is currently empty.</p>
-                </div>
-            </td></tr>`;
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No faculty members found.</td></tr>';
             return;
         }
-        
-        const canEdit = Permissions.can(userRole, 'edit_teachers');
-        filteredTeachers.forEach(t => {
+
+        filtered.forEach(t => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong>${t.name}</strong> ${t.isCoordinator === true || t.isCoordinator === 'true' ? '<span class="coord-badge">Coord</span>' : ''}</td>
+                <td><strong>${t.name}</strong></td>
                 <td>${t.phoneNumber}</td>
                 <td>${t.mailId}</td>
                 <td>${t.department}</td>
+                <td><span class="badge ${t.isCoordinator ? 'badge-danger' : 'badge-info'}">${t.isCoordinator ? 'Teacher Coordinator' : 'Faculty'}</span></td>
                 <td>
-                    ${canEdit ? `
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-secondary btn-sm" onclick="editTeacher('${t.phoneNumber}')" title="Edit">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="resetTeacherPassword('${t.phoneNumber}')" title="Reset Password">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteTeacher('${t.phoneNumber}')" title="Delete">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        </button>
-                    </div>
-                    ` : '<span class="text-muted small">view only</span>'}
+                    <button class="btn btn-secondary btn-sm" onclick="editTeacher('${t.phoneNumber}')">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteTeacher('${t.phoneNumber}')">Delete</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    // Edit Teacher Function
-    let editingTeacherPhone = null;
-    window.editTeacher = (phoneNo) => {
-        if (!Permissions.can(userRole, 'edit_teachers')) {
-            alert("Permission denied.");
-            return;
-        }
-        const teachers = db.getTeachers();
-        const t = teachers.find(teacher => teacher.phoneNumber === phoneNo);
-        if(t) {
-            editingTeacherPhone = phoneNo;
-            document.getElementById('tName').value = t.name;
-            document.getElementById('tPhone').value = t.phoneNumber;
-            document.getElementById('tMail').value = t.mailId;
-            document.getElementById('tDept').value = t.department;
-            document.getElementById('tPass').value = t.password;
+    window.editTeacher = (phone) => {
+        const t = db.getTeachers().find(x => x.phoneNumber === phone);
+        if (!t) return;
+        editingTeacherPhone = phone;
+        document.getElementById('tName').value = t.name;
+        document.getElementById('tPhone').value = t.phoneNumber;
+        document.getElementById('tMail').value = t.mailId;
+        document.getElementById('tDept').value = t.department;
+        if (document.getElementById('tIsCoordinator')) document.getElementById('tIsCoordinator').checked = !!t.isCoordinator;
+        if (teacherModalTitle) teacherModalTitle.textContent = 'Edit Faculty Member';
+        if (saveTeacherBtn) saveTeacherBtn.textContent = 'Update Faculty';
+        openModal(teacherModal);
+    };
 
-            if (document.getElementById('tIsCoordinator')) {
-                document.getElementById('tIsCoordinator').checked = t.isCoordinator === true || t.isCoordinator === 'true';
-            }
-            
-            openModal(teacherModal);
-            teacherModalTitle.textContent = 'Edit Teacher Record';
-            saveTeacherBtn.textContent = 'Update Teacher';
+    window.deleteTeacher = async (phone) => {
+        if (confirm("Are you sure you want to delete this faculty member?")) {
+            const res = await db.deleteTeacher(phone);
+            if (res.success) renderTeachers();
         }
     };
 
-    // Reset Teacher Password
-    window.resetTeacherPassword = (phoneNo) => {
-        if (!Permissions.can(userRole, 'edit_teachers')) {
-            alert("Permission denied.");
-            return;
+    const teacherSearchInput = document.getElementById('searchTeacher');
+    if (teacherSearchInput) teacherSearchInput.addEventListener('input', renderTeachers);
+
+    // =========================================================================
+    // --- 3. PLACEMENT ACTIVITIES ---
+    // =========================================================================
+    const placementModal = document.getElementById('placementModal');
+    const toggleAddPlacementBtn = document.getElementById('toggleAddPlacementBtn');
+    const cancelAddPlacementBtn = document.getElementById('cancelAddPlacementBtn');
+    const closePlacementModalBtn = document.getElementById('closePlacementModalBtn');
+    const addPlacementForm = document.getElementById('addPlacementForm');
+    const placementAlert = document.getElementById('placementAlert');
+
+    if (toggleAddPlacementBtn) {
+        toggleAddPlacementBtn.addEventListener('click', () => {
+            if (addPlacementForm) addPlacementForm.reset();
+            populatePlacementAudienceLists();
+            openModal(placementModal);
+        });
+    }
+
+    if (cancelAddPlacementBtn) cancelAddPlacementBtn.addEventListener('click', () => closeModal(placementModal));
+    if (closePlacementModalBtn) closePlacementModalBtn.addEventListener('click', () => closeModal(placementModal));
+
+    function populatePlacementAudienceLists() {
+        const students = db.getStudents();
+        const courses = [...new Set(students.map(s => s.course).filter(Boolean))].sort();
+        const depts = [...new Set(students.map(s => s.department).filter(Boolean))].sort();
+
+        const cList = document.getElementById('pCourseList');
+        if (cList) {
+            cList.innerHTML = courses.map(c => `<label class="d-flex align-items-center gap-2 mb-1" style="font-size: 13px;"><input type="checkbox" name="pTargetCourses" value="${c}"> ${c}</label>`).join('');
         }
-        if(confirm(`Reset password for teacher ${phoneNo}?`)) {
-            let teachers = db.getTeachers();
-            const index = teachers.findIndex(t => t.phoneNumber === phoneNo);
-            if(index !== -1) {
-                teachers[index].password = "Teacher@123";
-                db.saveTeachers(teachers);
-                showTeacherAlert(`Password reset to 'Teacher@123' for ${phoneNo}`, 'success');
-            }
+
+        const dList = document.getElementById('pDeptList');
+        if (dList) {
+            dList.innerHTML = depts.map(d => `<label class="d-flex align-items-center gap-2 mb-1" style="font-size: 13px;"><input type="checkbox" name="pTargetDepts" value="${d}"> ${d}</label>`).join('');
         }
-    };
 
-    function showTeacherAlert(message, type) {
-        teacherAlert.textContent = message;
-        teacherAlert.className = `alert alert-${type} mb-3`;
-        teacherAlert.classList.remove('hidden');
-        setTimeout(() => teacherAlert.classList.add('hidden'), 5000);
+        const sList = document.getElementById('pStudentList');
+        if (sList) {
+            sList.innerHTML = students.map(s => `<label class="d-flex align-items-center gap-2 mb-1" style="font-size: 12px;"><input type="checkbox" name="pTargetStudents" value="${s.registerNumber}"> ${s.name} (${s.registerNumber})</label>`).join('');
+        }
     }
 
-    // --- Training Management ---
-    const toggleAddTrainingBtn = document.getElementById('toggleAddTrainingBtn');
-    const cancelAddTrainingBtn = document.getElementById('cancelAddTrainingBtn');
-    const trainingModal = document.getElementById('trainingModal');
-    const closeTrainingModalBtn = document.getElementById('closeTrainingModalBtn');
-    const trainingModalTitle = document.getElementById('trainingModalTitle');
-    const saveTrainingBtn = document.getElementById('saveTrainingBtn');
-    const addTrainingForm = document.getElementById('addTrainingForm');
-    const trainingAlert = document.getElementById('trainingAlert');
-    const courseFilterSection = document.getElementById('courseFilterSection');
-    const deptFilterSection = document.getElementById('deptFilterSection');
-    const targetTypeRadios = document.querySelectorAll('input[name="targetType"]');
-
-    if (toggleAddTrainingBtn) {
-        toggleAddTrainingBtn.addEventListener('click', () => {
-            editingProgramId = null;
-            addTrainingForm.reset();
-            document.getElementById('trnDesc').innerHTML = '';
-            trainingModalTitle.textContent = 'Create New Training Program';
-            saveTrainingBtn.textContent = 'Create Program';
-            openModal(trainingModal);
-            populateTrainingFilters();
-        });
-    }
-
-    if (cancelAddTrainingBtn) {
-        cancelAddTrainingBtn.addEventListener('click', () => {
-            trainingModal.classList.add('hidden');
-            addTrainingForm.reset();
-            document.getElementById('trnDesc').innerHTML = '';
-        });
-    }
-
-    if (closeTrainingModalBtn) {
-        closeTrainingModalBtn.addEventListener('click', () => {
-            trainingModal.classList.add('hidden');
-            addTrainingForm.reset();
-            document.getElementById('trnDesc').innerHTML = '';
-        });
-    }
-
-    targetTypeRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            courseFilterSection.classList.add('hidden');
-            deptFilterSection.classList.add('hidden');
-            
-            if (radio.value === 'course') {
-                courseFilterSection.classList.remove('hidden');
-            } else if (radio.value === 'dept') {
-                deptFilterSection.classList.remove('hidden');
-            }
+    // Radio toggles for Audience
+    document.querySelectorAll('input[name="pTargetType"]').forEach(r => {
+        r.addEventListener('change', (e) => {
+            const v = e.target.value;
+            const cSec = document.getElementById('pCourseListSection');
+            const dSec = document.getElementById('pDeptListSection');
+            const sSec = document.getElementById('pStudentListSection');
+            if (cSec) cSec.classList.toggle('hidden', v !== 'course');
+            if (dSec) dSec.classList.toggle('hidden', v !== 'dept');
+            if (sSec) sSec.classList.toggle('hidden', v !== 'student');
         });
     });
 
-    const trnDate = document.getElementById('trnDate');
-    const trnEndDate = document.getElementById('trnEndDate');
-
-    if(trnDate) trnDate.addEventListener('change', () => {});
-    if(trnEndDate) trnEndDate.addEventListener('change', () => {});
-
-    function populateTrainingFilters() {
-        const students = db.getStudents();
-        const courses = [...new Set(students.map(s => s.course))].sort();
-        const depts = [...new Set(students.map(s => s.department))].sort();
-
-        const courseList = document.getElementById('trnCourseList');
-        const deptList = document.getElementById('trnDeptList');
-
-        courseList.innerHTML = courses.map(c => `
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <input type="checkbox" name="targetCourses" value="${c}" id="c_${c.replace(/\s+/g, '_')}">
-                <label for="c_${c.replace(/\s+/g, '_')}" class="small mb-0" style="cursor: pointer;">${c}</label>
-            </div>
-        `).join('') || '<p class="text-muted small">No courses found</p>';
-
-        deptList.innerHTML = depts.map(d => `
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <input type="checkbox" name="targetDepts" value="${d}" id="d_${d.replace(/\s+/g, '_')}">
-                <label for="d_${d.replace(/\s+/g, '_')}" class="small mb-0" style="cursor: pointer;">${d}</label>
-            </div>
-        `).join('') || '<p class="text-muted small">No departments found</p>';
-    }
-
-    if (addTrainingForm) {
-        addTrainingForm.addEventListener('submit', async (e) => {
+    if (addPlacementForm) {
+        addPlacementForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            if (submitBtn) submitBtn.disabled = true;
-            try {
-                const targetType = document.querySelector('input[name="targetType"]:checked').value;
-                const selectedCourses = Array.from(document.querySelectorAll('input[name="targetCourses"]:checked')).map(cb => cb.value);
-                const selectedDepts = Array.from(document.querySelectorAll('input[name="targetDepts"]:checked')).map(cb => cb.value);
+            const targetType = document.querySelector('input[name="pTargetType"]:checked').value;
+            const selectedCourses = Array.from(document.querySelectorAll('input[name="pTargetCourses"]:checked')).map(cb => cb.value);
+            const selectedDepts = Array.from(document.querySelectorAll('input[name="pTargetDepts"]:checked')).map(cb => cb.value);
+            const selectedStudents = Array.from(document.querySelectorAll('input[name="pTargetStudents"]:checked')).map(cb => cb.value);
 
-                const program = {
-                    name: document.getElementById('trnName').value.trim(),
-                    venue: document.getElementById('trnVenue').value.trim(),
-                    date: document.getElementById('trnDate').value,
-                    description: document.getElementById('trnDesc').innerHTML.trim(),
-                    target: {
-                        type: targetType,
-                        courses: targetType === 'course' ? selectedCourses : [],
-                        depts: targetType === 'dept' ? selectedDepts : []
-                    },
-                    endDate: document.getElementById('trnEndDate').value
-                };
+            const activity = {
+                name: document.getElementById('pName').value.trim(),
+                venue: document.getElementById('pVenue') ? document.getElementById('pVenue').value.trim() : 'Campus',
+                date: document.getElementById('pDate').value,
+                description: document.getElementById('pDesc').innerHTML.trim(),
+                target: {
+                    type: targetType,
+                    courses: targetType === 'course' ? selectedCourses : [],
+                    depts: targetType === 'dept' ? selectedDepts : [],
+                    students: targetType === 'student' ? selectedStudents : []
+                },
+                phases: [
+                    { id: 'p1', name: 'Initial Registration', description: 'Application received and verified', completions: [] }
+                ]
+            };
 
-                let result;
-                if (editingProgramId) {
-                    result = await db.updateTrainingProgram(editingProgramId, program);
-                    showTrainingAlert(result.message, result.success ? 'success' : 'danger');
-                    if (result.success) editingProgramId = null;
-                } else {
-                    result = await db.addTrainingProgram(program);
-                    showTrainingAlert(result.message, result.success ? 'success' : 'danger');
-                }
-                
-                if (result.success) {
-                    addTrainingForm.reset();
-                    document.getElementById('trnDesc').innerHTML = '';
-                    closeModal(trainingModal);
-                    renderTrainingPrograms();
-                }
-            } finally {
-                if (submitBtn) submitBtn.disabled = false;
+            const result = await db.addPlacementActivity(activity);
+            if (result.success) {
+                closeModal(placementModal);
+                addPlacementForm.reset();
+                renderPlacementActivities();
+            } else {
+                alert(result.message || 'Error creating placement drive.');
             }
         });
     }
 
-    function renderTrainingPrograms() {
-        const programs = db.getTrainingPrograms();
-        const tbody = document.querySelector('#trainingTable tbody');
-        if(!tbody) return;
-        tbody.innerHTML = '';
+    function renderPlacementActivities() {
+        const activities = db.getPlacementActivities() || [];
+        const tbody = document.querySelector('#placementTable tbody');
+        if (!tbody) return;
 
-        if (programs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No programs found.</td></tr>';
+        tbody.innerHTML = '';
+        if (activities.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No placement drives found.</td></tr>';
             return;
         }
 
-        programs.forEach(p => {
+        activities.forEach(a => {
             const tr = document.createElement('tr');
-            const st = programAttendanceStats(p);
+            const targetDesc = a.target ? (a.target.type === 'all' ? 'All Students' : a.target.type.toUpperCase()) : 'All';
             tr.innerHTML = `
-                <td style="min-width:180px;"><strong>${p.name}</strong></td>
-                <td style="white-space:nowrap;">${p.date}${p.endDate && p.endDate !== p.date ? '<br>to ' + p.endDate : ''}</td>
+                <td><strong>${a.name}</strong></td>
+                <td>${a.venue || 'Campus'}</td>
+                <td>${a.date || 'TBD'}</td>
+                <td><span class="badge badge-info">${targetDesc}</span></td>
+                <td><span class="badge badge-success">${(a.registrations || []).length} Candidates</span></td>
+                <td><span class="badge badge-warning">${(a.phases || []).length} Rounds</span></td>
                 <td>
-                    <small class="${p.isRegistrationOpen ? 'text-success' : 'text-danger'}">${p.isRegistrationOpen ? 'Registration Open' : 'Registration Closed'}</small><br>
-                    <small class="${p.isFeedbackOpen ? 'text-success' : 'text-danger'}">${p.isFeedbackOpen ? '💬 Feedback Enabled' : '💬 Feedback Disabled'}</small>
-                </td>
-                <td class="text-center"><strong style="font-size:1rem;">${st.registered}</strong></td>
-                <td class="text-center"><span style="color:#16a34a;font-weight:700;">${st.attended}</span></td>
-                <td class="text-center"><span style="color:#dc2626;font-weight:700;">${st.notAttended}</span></td>
-                <td class="text-center"><span style="color:#0891b2;font-weight:700;">${st.completed}</span></td>
-                <td style="white-space:nowrap; width:1%;">
-                    <div class="d-flex gap-1">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="window.location.href='manage-training.html?id=${p.id}'" title="Manage">Manage</button>
-                        ${Permissions.can(userRole, 'edit_training_drives') ? `
-                        <button class="btn btn-secondary btn-sm" onclick="editTrainingProgram('${p.id}')" title="Edit">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="toggleTrnReg('${p.id}')" title="Registration">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="${p.isRegistrationOpen ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z'}"/></svg>
-                        </button>
-                        <button class="btn ${p.isFeedbackOpen ? 'btn-success' : 'btn-secondary'} btn-sm" onclick="toggleFeedback('${p.id}')" title="Feedback">
-                            💬
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteTrainingProgram('${p.id}')" title="Delete">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        </button>
-                        ` : ''}
-                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="openManagePlacementView('${a.id}')">Manage Rounds</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletePlacementActivity('${a.id}')">Delete</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    let editingProgramId = null;
-    window.editTrainingProgram = (id) => {
-        const programs = db.getTrainingPrograms();
-        const p = programs.find(program => program.id === id);
-        if(p) {
-            editingProgramId = id;
-            document.getElementById('trnName').value = p.name;
-            document.getElementById('trnVenue').value = p.venue;
-            document.getElementById('trnDate').value = p.date;
-            document.getElementById('trnEndDate').value = p.endDate || '';
-            document.getElementById('trnDesc').innerHTML = p.description || '';
-            
-            // Set Target Audience
-            const radios = document.querySelectorAll('input[name="targetType"]');
-            radios.forEach(r => {
-                if(r.value === p.target.type) r.checked = true;
-            });
-            if(p.target.type === 'course') {
-                courseFilterSection.classList.remove('hidden');
-                deptFilterSection.classList.add('hidden');
-                populateTrainingFilters();
-                setTimeout(() => {
-                    (p.target.courses || []).forEach(c => {
-                        const cb = document.querySelector(`input[name="targetCourses"][value="${c}"]`);
-                        if(cb) cb.checked = true;
-                    });
-                }, 100);
-            } else if(p.target.type === 'dept') {
-                deptFilterSection.classList.remove('hidden');
-                courseFilterSection.classList.add('hidden');
-                populateTrainingFilters();
-                setTimeout(() => {
-                    (p.target.depts || []).forEach(d => {
-                        const cb = document.querySelector(`input[name="targetDepts"][value="${d}"]`);
-                        if(cb) cb.checked = true;
-                    });
-                }, 100);
-            } else {
-                courseFilterSection.classList.add('hidden');
-                deptFilterSection.classList.add('hidden');
-            }
-
-            openModal(trainingModal);
-            trainingModalTitle.textContent = 'Edit Training Program';
-            saveTrainingBtn.textContent = 'Update Program';
+    window.deletePlacementActivity = async (id) => {
+        if (confirm("Are you sure you want to delete this placement drive?")) {
+            const res = await db.deletePlacementActivity(id);
+            if (res.success) renderPlacementActivities();
         }
     };
 
+    // Sub-view: Manage Placement Drive
+    window.openManagePlacementView = function(id, subTab = 'funnel') {
+        const activities = db.getPlacementActivities() || [];
+        const act = activities.find(a => a.id === id);
+        if (!act) return;
 
+        document.getElementById('placementListView').classList.add('hidden');
+        document.getElementById('placementManageView').classList.remove('hidden');
+        document.getElementById('manageActivityTitle').textContent = `Manage: ${act.name}`;
 
-    window.toggleTrnReg = async (id) => {
-        const result = await db.toggleRegistration(id);
-        if (result.success) {
-            showTrainingAlert(result.message, 'success');
-            renderTrainingPrograms();
-        } else {
-            showTrainingAlert(result.message || 'Error toggling registration', 'danger');
-        }
-    };
-
-    window.toggleFeedback = async (id) => {
-        const result = await db.toggleFeedback(id);
-        if (result.success) {
-            showTrainingAlert(result.message, 'success');
-            renderTrainingPrograms();
-        } else {
-            showTrainingAlert(result.message || 'Error toggling feedback', 'danger');
-        }
-    };
-
-    window.deleteTrainingProgram = async (id) => {
-        if (confirm('Are you sure you want to delete this training program? This will also remove all its sessions and attendance records.')) {
-            const result = await db.deleteTrainingProgram(id);
-            if (result.success) {
-                showTrainingAlert(result.message || 'Program deleted successfully.', 'success');
-                renderTrainingPrograms();
-            } else {
-                showTrainingAlert(result.message || 'Error deleting program.', 'danger');
-            }
-        }
-    };
-
-    window.clearAllTrainingPrograms = async () => {
-        if (confirm('WARNING: Are you sure you want to delete ALL training programs? This action cannot be undone.')) {
-            const result = await db.clearAllTrainingPrograms();
-            if (result.success) {
-                showTrainingAlert(result.message || 'All programs deleted.', 'success');
-                renderTrainingPrograms();
-            } else {
-                showTrainingAlert(result.message || 'Error deleting programs.', 'danger');
-            }
-        }
-    };
-
-    window.manageAttendance = (id) => {
-        const programs = db.getTrainingPrograms();
-        const p = programs.find(program => program.id === id);
-        if(!p) return;
-
-        const section = document.getElementById('attendanceSection');
-        section.classList.remove('hidden');
-        document.getElementById('attendanceTitle').textContent = `Manage: ${p.name}`;
-        
-        // Populate Day Select
-        const daySelect = document.getElementById('attnDay');
-        daySelect.innerHTML = '';
-        for(let i=1; i<=p.days; i++) {
-            daySelect.innerHTML += `<option value="day${i}">Day ${i}</option>`;
-        }
-
-        // Show registrations
-        const regContainer = document.getElementById('registrationsContainer');
-        if (p.registrations.length === 0) {
-            regContainer.innerHTML = '<p class="text-muted">No students registered yet.</p>';
-        } else {
-            const students = db.getStudents();
-            const regStudents = students.filter(s => p.registrations.includes(s.registerNumber));
-            
-            let tableHtml = '<table class="table table-sm"><thead><tr><th>Reg No</th><th>Name</th><th>Dept</th></tr></thead><tbody>';
-            regStudents.forEach(s => {
-                tableHtml += `<tr><td>${s.registerNumber}</td><td>${s.name}</td><td>${s.department}</td></tr>`;
-            });
-            tableHtml += '</tbody></table>';
-            regContainer.innerHTML = tableHtml;
-        }
-
-        // Store active program ID for upload
-        section.dataset.activeProgramId = id;
-    };
-
-    const uploadAttnBtn = document.getElementById('uploadAttnBtn');
-    if (uploadAttnBtn) {
-        uploadAttnBtn.addEventListener('click', () => {
-            const programId = document.getElementById('attendanceSection').dataset.activeProgramId;
-            const day = document.getElementById('attnDay').value;
-            const session = document.getElementById('attnSession').value;
-            const file = document.getElementById('attnExcelFile').files[0];
-
-            if (!file) {
-                alert('Please select an attendance Excel file.');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                    
-                    // Expecting a column 'Register Number'
-                    const regNumbers = jsonData.map(row => String(row['Register Number'] || row['Reg No'] || '').trim()).filter(r => r);
-                    
-                    if (regNumbers.length === 0) {
-                        alert('No register numbers found in Excel. Column header should be "Register Number" or "Reg No".');
-                        return;
-                    }
-
-                    const result = await db.updateAttendance(programId, day, session, regNumbers);
-                    if (result.success) {
-                        alert(`Attendance for ${day} ${session} uploaded: ${regNumbers.length} students.`);
-                        document.getElementById('attnExcelFile').value = '';
-                    } else {
-                        alert(result.message || 'Error uploading attendance.');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('Error processing file.');
-                }
-            };
-            reader.readAsArrayBuffer(file);
+        // Subtabs
+        const mTabs = document.querySelectorAll('.m-sub-tab');
+        const mPages = document.querySelectorAll('.manage-sub-page');
+        mTabs.forEach(t => {
+            t.classList.toggle('active', t.dataset.tab === subTab);
         });
-    }
+        mPages.forEach(p => {
+            p.classList.toggle('hidden', p.id !== `${subTab}Tab`);
+        });
 
-    function showTrainingAlert(message, type) {
-        trainingAlert.textContent = message;
-        trainingAlert.className = `alert alert-${type} mb-3`;
-        trainingAlert.classList.remove('hidden');
-        setTimeout(() => trainingAlert.classList.add('hidden'), 5000);
-    }
+        mTabs.forEach(t => {
+            t.onclick = () => {
+                mTabs.forEach(x => x.classList.remove('active'));
+                mPages.forEach(x => x.classList.add('hidden'));
+                t.classList.add('active');
+                document.getElementById(`${t.dataset.tab}Tab`).classList.remove('hidden');
+            };
+        });
 
-    function showPlacementAlert(message, type) {
-        if (!placementAlert) return;
-        placementAlert.textContent = message;
-        placementAlert.className = `alert alert-${type} mb-3`;
-        placementAlert.classList.remove('hidden');
-        setTimeout(() => placementAlert.classList.add('hidden'), 5000);
-    }
-    const premiumColors = ['#0D6EFC', '#10b981', '#6366f1', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f43f5e', '#f97316', '#06b6d4'];
-    function getProgramColor(id) {
-        if (!id) return premiumColors[0];
-        let hash = 0;
-        for (let i = 0; i < id.length; i++) {
-            hash = id.charCodeAt(i) + ((hash << 5) - hash);
+        // Funnel Overview
+        const funnelArea = document.getElementById('funnelOverviewArea');
+        if (funnelArea) {
+            const phases = act.phases || [];
+            let fhtml = `
+                <div class="dash-grid-3 mb-4">
+                    <div class="stat-card accent-red">
+                        <div class="stat-info">
+                            <span class="stat-title">Registered Candidates</span>
+                            <span class="stat-value">${(act.registrations || []).length}</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span class="stat-title">Selection Rounds</span>
+                            <span class="stat-value">${phases.length}</span>
+                        </div>
+                    </div>
+                </div>
+                <h4 style="color: #0B1F3A; margin-bottom: 1rem;">Candidate Funnel Progression</h4>
+                <div class="d-flex flex-column gap-2">
+            `;
+
+            phases.forEach((p, idx) => {
+                const count = (p.completions || []).length;
+                fhtml += `
+                    <div class="p-3 rounded" style="background: #FFFFFF; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="color: #0B1F3A;">Round ${idx + 1}: ${p.name}</strong>
+                            <div style="font-size: 0.8rem; color: #64748B;">${p.description || ''}</div>
+                        </div>
+                        <span class="badge badge-success" style="font-size: 0.85rem;">${count} Cleared</span>
+                    </div>
+                `;
+            });
+            fhtml += '</div>';
+            funnelArea.innerHTML = fhtml;
         }
-        return premiumColors[Math.abs(hash) % premiumColors.length];
+
+        // Phases List
+        const phasesArea = document.getElementById('phasesListArea');
+        if (phasesArea) {
+            const phases = act.phases || [];
+            phasesArea.innerHTML = phases.map((p, idx) => `
+                <div class="p-3 rounded mb-2" style="background: #FFFFFF; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>Round ${idx + 1}: ${p.name}</strong>
+                        <div style="font-size: 0.8rem; color: #64748B;">${p.description || 'No description'}</div>
+                    </div>
+                    <span class="badge badge-info">${(p.completions || []).length} Completed</span>
+                </div>
+            `).join('') || '<p class="text-muted">No rounds configured yet.</p>';
+        }
+
+        // Candidate List Table
+        const mTableBody = document.querySelector('#manageStudentsTable tbody');
+        if (mTableBody) {
+            const students = db.getStudents();
+            const regStudents = students.filter(s => (act.registrations || []).includes(s.registerNumber));
+            mTableBody.innerHTML = regStudents.map(s => `
+                <tr>
+                    <td><strong>${s.registerNumber}</strong></td>
+                    <td>${s.name}</td>
+                    <td>${s.course}</td>
+                    <td><span class="badge badge-info">Active</span></td>
+                    <td><span class="badge badge-success">Registered</span></td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" class="text-center text-muted">No candidates registered for this drive yet.</td></tr>';
+        }
+    };
+
+    window.closeManagePlacementView = function() {
+        document.getElementById('placementManageView').classList.add('hidden');
+        document.getElementById('placementListView').classList.remove('hidden');
+    };
+
+    // =========================================================================
+    // --- 4. CLASSES VIEW ---
+    // =========================================================================
+    function renderClassView() {
+        const students = db.getStudents();
+        const classContainer = document.getElementById('classCards');
+        if (!classContainer) return;
+
+        const classMap = {};
+        students.forEach(s => {
+            const cName = s.class || s.course || 'Unassigned';
+            if (!classMap[cName]) classMap[cName] = [];
+            classMap[cName].push(s);
+        });
+
+        classContainer.innerHTML = Object.keys(classMap).sort().map(cName => `
+            <div class="glass-card" style="border-top: 4px solid var(--secondary-color);">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h4 style="margin: 0; color: #0B1F3A;">${cName}</h4>
+                    <span class="badge badge-info">${classMap[cName].length} Students</span>
+                </div>
+                <p class="text-muted mb-3" style="font-size: 0.8rem;">Academic Class Group</p>
+                <button class="btn btn-outline btn-sm w-100" onclick="viewClassStudents('${cName}')">View Student List</button>
+            </div>
+        `).join('') || '<p class="text-muted">No classes available.</p>';
     }
 
+    window.viewClassStudents = function(className) {
+        const students = db.getStudents().filter(s => (s.class || s.course) === className);
+        const modal = document.getElementById('classModal');
+        const modalBody = document.getElementById('classModalBody');
+        const modalTitle = document.getElementById('classModalTitle');
+        if (!modal || !modalBody) return;
+
+        modalTitle.textContent = `Class: ${className} (${students.length} Students)`;
+        modalBody.innerHTML = `
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Reg No</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${students.map(s => `
+                            <tr>
+                                <td><strong>${s.registerNumber}</strong></td>
+                                <td>${s.name}</td>
+                                <td>${s.mailId}</td>
+                                <td>${s.phoneNumber}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        openModal(modal);
+    };
+
+    // =========================================================================
+    // --- 5. PROGRAM CALENDAR ---
+    // =========================================================================
     function renderCalendar() {
         const container = document.getElementById('calendarContainer');
-        const programs = db.getTrainingPrograms();
-        
+        if (!container) return;
+
+        const activities = db.getPlacementActivities() || [];
         const monthSel = document.getElementById('calMonth');
         const yearSel = document.getElementById('calYear');
         
-        const currentMonth = monthSel.value ? parseInt(monthSel.value) : new Date().getMonth();
-        const currentYear = yearSel.value ? parseInt(yearSel.value) : new Date().getFullYear();
-
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        
-        let html = `
-            <div class="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e5e7eb; border: 1px solid #e5e7eb;">
-                <div class="cal-day-head" style="background: #f9fafb; padding: 10px; text-align: center; font-weight: 600; font-size: 0.8rem;">Sun</div>
-                <div class="cal-day-head" style="background: #f9fafb; padding: 10px; text-align: center; font-weight: 600; font-size: 0.8rem;">Mon</div>
-                <div class="cal-day-head" style="background: #f9fafb; padding: 10px; text-align: center; font-weight: 600; font-size: 0.8rem;">Tue</div>
-                <div class="cal-day-head" style="background: #f9fafb; padding: 10px; text-align: center; font-weight: 600; font-size: 0.8rem;">Wed</div>
-                <div class="cal-day-head" style="background: #f9fafb; padding: 10px; text-align: center; font-weight: 600; font-size: 0.8rem;">Thu</div>
-                <div class="cal-day-head" style="background: #f9fafb; padding: 10px; text-align: center; font-weight: 600; font-size: 0.8rem;">Fri</div>
-                <div class="cal-day-head" style="background: #f9fafb; padding: 10px; text-align: center; font-weight: 600; font-size: 0.8rem;">Sat</div>
-        `;
+        const currentMonth = monthSel && monthSel.value ? parseInt(monthSel.value) : new Date().getMonth();
+        const currentYear = yearSel && yearSel.value ? parseInt(yearSel.value) : new Date().getFullYear();
 
         const firstDay = new Date(currentYear, currentMonth, 1).getDay();
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-        // Empty slots
+        let html = `
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #E2E8F0; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden;">
+                ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => `<div style="background: #F8FAFC; padding: 10px; text-align: center; font-weight: 700; font-size: 0.75rem; color: #0B1F3A;">${d}</div>`).join('')}
+        `;
+
         for (let i = 0; i < firstDay; i++) {
-            html += `<div style="background: #fff; min-height: 100px;"></div>`;
+            html += `<div style="background: #FFFFFF; min-height: 90px;"></div>`;
         }
 
-        // Days
         for (let day = 1; day <= daysInMonth; day++) {
             const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            
-            // Get Training Programs for this day
-            const dayPrograms = programs.filter(p => {
-                const start = p.date;
-                const end = p.endDate || p.date;
-                return dateStr >= start && dateStr <= end;
-            });
+            const dayEvents = activities.filter(a => a.date === dateStr);
 
             html += `
-                <div style="background: #fff; min-height: 100px; padding: 8px; border: 0.5px solid #f3f4f6; cursor: pointer; transition: background 0.2s;" onclick="viewDateEvents('${dateStr}')" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='#fff'">
-                    <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 8px;">${day}</div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                        ${dayPrograms.map(p => `
-                            <div style="width: 14px; height: 14px; background: ${getProgramColor(p.id)}; border-radius: 4px;" title="Program: ${p.name}"></div>
+                <div style="background: #FFFFFF; min-height: 90px; padding: 8px; border: 0.5px solid #F1F5F9; cursor: pointer; transition: background 0.15s;" onclick="viewDateEvents('${dateStr}')" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#FFFFFF'">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #64748B; margin-bottom: 6px;">${day}</div>
+                    <div class="d-flex flex-column gap-1">
+                        ${dayEvents.map(e => `
+                            <div style="font-size: 10px; background: #FFF1F2; color: #A00000; padding: 2px 4px; border-radius: 4px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name}">
+                                ${e.name}
+                            </div>
                         `).join('')}
                     </div>
                 </div>
@@ -1406,613 +1005,127 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.viewDateEvents = function(dateStr) {
         const header = document.getElementById('calSelectedDateHeader');
         const list = document.getElementById('calSelectedEventsList');
-        if(!header || !list) return;
+        if (!header || !list) return;
 
         const dateObj = new Date(dateStr);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-        header.textContent = `Programs on ${formattedDate}`;
+        header.textContent = `Drives on ${dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
-        const programs = db.getTrainingPrograms();
-        const dayPrograms = programs.filter(p => {
-            const start = p.date;
-            const end = p.endDate || p.date;
-            return dateStr >= start && dateStr <= end;
-        });
+        const activities = db.getPlacementActivities() || [];
+        const events = activities.filter(a => a.date === dateStr);
 
-        if (dayPrograms.length === 0) {
-            list.innerHTML = `<p class="text-muted small">No programs scheduled for this day.</p>`;
+        if (events.length === 0) {
+            list.innerHTML = `<p class="text-muted" style="font-size: 0.85rem;">No placement drives scheduled on this date.</p>`;
         } else {
-            let html = '';
-            dayPrograms.forEach(p => {
-                const color = getProgramColor(p.id);
-                html += `
-                    <div style="background: #fff; border-left: 4px solid ${color}; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <div style="font-size: 0.75rem; font-weight: 600; color: ${color}; text-transform: uppercase; margin-bottom: 4px;">Program</div>
-                        <h5 style="margin: 0 0 4px 0; font-size: 1rem; color: #111827;">${p.name}</h5>
-                        ${p.description ? `<div style="margin: 0 0 8px 0; font-size: 0.85rem; color: #4b5563; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.description}</div>` : ''}
-                        <button class="btn btn-sm mt-2" style="border: 1px solid ${color}; color: ${color}; background: transparent;" onclick="window.location.href='manage-training.html?id=${p.id}'">View Program</button>
-                    </div>
-                `;
-            });
-
-            list.innerHTML = html;
-        }
-
-        // On mobile view, immediately and smoothly scroll to program details card below calendar
-        const rightPanel = document.getElementById('calendarRightPanelWrapper');
-        const calContainer = document.getElementById('calendarContainer');
-        if (rightPanel) {
-            const isMobile = window.innerWidth <= 992 || (calContainer && rightPanel.getBoundingClientRect().top > calContainer.getBoundingClientRect().top + 50);
-            if (isMobile) {
-                requestAnimationFrame(() => {
-                    rightPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                });
-            }
+            list.innerHTML = events.map(e => `
+                <div class="p-3 rounded" style="background: #FFFFFF; border-left: 4px solid var(--primary-color); border: 1px solid #E2E8F0; box-shadow: var(--shadow-sm);">
+                    <h5 style="margin: 0 0 0.25rem 0; color: #0B1F3A; font-weight: 700;">${e.name}</h5>
+                    <div style="font-size: 0.8rem; color: #64748B;">Role/Venue: <strong>${e.venue || 'Campus Recruitment'}</strong></div>
+                </div>
+            `).join('');
         }
     };
 
-    // --- Placement Management ---
-    const toggleAddPlacementBtn = document.getElementById('toggleAddPlacementBtn');
-    const toggleAddRecruitmentBtn = document.getElementById('toggleAddRecruitmentBtn');
-    const cancelAddPlacementBtn = document.getElementById('cancelAddPlacementBtn');
-    const placementModal = document.getElementById('placementModal');
-    const closePlacementModalBtn = document.getElementById('closePlacementModalBtn');
-    const placementModalTitle = document.getElementById('placementModalTitle');
-    const savePlacementBtn = document.getElementById('savePlacementBtn');
-    const addPlacementForm = document.getElementById('addPlacementForm');
-    const placementAlert = document.getElementById('placementAlert');
-    const pTargetRadios = document.querySelectorAll('input[name="pTargetType"]');
-    const placementTypeFilter = document.getElementById('placementTypeFilter');
-
-    let currentPlacementType = 'placement';
-
-    const toggleFormFields = (type) => {
-        const pNameLabel = document.getElementById('pNameLabel');
-        const pNameContainer = document.getElementById('pNameContainer');
-        const pVenueContainer = document.getElementById('pVenueContainer');
-        const pVenue = document.getElementById('pVenue');
-
-        if (pNameLabel && pNameContainer && pVenueContainer && pVenue) {
-            if (type === 'recruitment') {
-                pNameLabel.textContent = 'COMPANY NAME';
-                pNameContainer.style.gridColumn = 'span 1';
-                pVenueContainer.style.display = 'block';
-                pVenue.required = true;
-            } else {
-                pNameLabel.textContent = 'ACTIVITY NAME';
-                pNameContainer.style.gridColumn = 'span 2';
-                pVenueContainer.style.display = 'none';
-                pVenue.required = false;
-                pVenue.value = '';
-            }
-        }
-    };
-
-    if(toggleAddPlacementBtn) {
-        toggleAddPlacementBtn.addEventListener('click', () => {
-            currentPlacementType = 'placement';
-            toggleFormFields('placement');
-            editingPlacementId = null;
-            addPlacementForm.reset();
-            document.getElementById('pDesc').innerHTML = '';
-            placementModalTitle.textContent = 'Create Placement Activity';
-            savePlacementBtn.textContent = 'Create Activity';
-            openModal(placementModal);
-            populatePlacementFilters();
-        });
-    }
-
-    if(toggleAddRecruitmentBtn) {
-        toggleAddRecruitmentBtn.addEventListener('click', () => {
-            currentPlacementType = 'recruitment';
-            toggleFormFields('recruitment');
-            editingPlacementId = null;
-            addPlacementForm.reset();
-            document.getElementById('pDesc').innerHTML = '';
-            placementModalTitle.textContent = 'Create Recruitment Drive';
-            savePlacementBtn.textContent = 'Create Recruitment';
-            openModal(placementModal);
-            populatePlacementFilters();
-        });
-    }
-
-    if(placementTypeFilter) {
-        placementTypeFilter.addEventListener('change', renderPlacementActivities);
-    }
-
-    // Sub-tab logic for Placement Activities
-    const pSubTabs = document.querySelectorAll('.p-sub-tab');
-    pSubTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            pSubTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            document.getElementById('activitySubTab').classList.add('hidden');
-            document.getElementById('recruitmentSubTab').classList.add('hidden');
-            
-            const targetId = tab.getAttribute('data-subtab');
-            document.getElementById(targetId).classList.remove('hidden');
-        });
-    });
-
-    if(cancelAddPlacementBtn) {
-        cancelAddPlacementBtn.addEventListener('click', () => {
-            placementModal.classList.add('hidden');
-            addPlacementForm.reset();
-            document.getElementById('pDesc').innerHTML = '';
-        });
-    }
-
-    if(closePlacementModalBtn) {
-        closePlacementModalBtn.addEventListener('click', () => {
-            placementModal.classList.add('hidden');
-            addPlacementForm.reset();
-            document.getElementById('pDesc').innerHTML = '';
-        });
-    }
-
-    pTargetRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            document.getElementById('pCourseListSection').classList.add('hidden');
-            document.getElementById('pDeptListSection').classList.add('hidden');
-            document.getElementById('pStudentListSection').classList.add('hidden');
-            if(radio.value === 'course') document.getElementById('pCourseListSection').classList.remove('hidden');
-            if(radio.value === 'dept') document.getElementById('pDeptListSection').classList.remove('hidden');
-            if(radio.value === 'student') document.getElementById('pStudentListSection').classList.remove('hidden');
-            populatePlacementFilters();
-        });
-    });
-
-    function populatePlacementFilters() {
-        const students = db.getStudents();
-        const courses = [...new Set(students.map(s => s.course))].sort();
-        const depts = [...new Set(students.map(s => s.department))].sort();
-
-        document.getElementById('pCourseList').innerHTML = courses.map(c => `
-            <div class="d-flex align-items-center gap-2 mb-1 px-2">
-                <input type="checkbox" name="pCourses" value="${c}"> <label class="small mb-0">${c}</label>
-            </div>
-        `).join('');
-
-        document.getElementById('pDeptList').innerHTML = depts.map(d => `
-            <div class="d-flex align-items-center gap-2 mb-1 px-2">
-                <input type="checkbox" name="pDepts" value="${d}"> <label class="small mb-0">${d}</label>
-            </div>
-        `).join('');
-
-        document.getElementById('pStudentList').innerHTML = students.map(s => `
-            <div class="d-flex align-items-center gap-2 mb-1 px-2">
-                <input type="checkbox" name="pStudentSelect" value="${s.registerNumber}"> 
-                <label class="small mb-0"><strong>${s.name}</strong> (${s.registerNumber})</label>
-            </div>
-        `).join('');
-    }
-
-    if(addPlacementForm) {
-        addPlacementForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            if (submitBtn) submitBtn.disabled = true;
-            try {
-                const targetType = document.querySelector('input[name="pTargetType"]:checked').value;
-                const courses = Array.from(document.querySelectorAll('input[name="pCourses"]:checked')).map(c => c.value);
-                const depts = Array.from(document.querySelectorAll('input[name="pDepts"]:checked')).map(d => d.value);
-                const selectedStudents = Array.from(document.querySelectorAll('input[name="pStudentSelect"]:checked')).map(s => s.value);
-
-                const activity = {
-                    name: document.getElementById('pName').value.trim(),
-                    venue: currentPlacementType === 'recruitment' ? document.getElementById('pVenue').value.trim() : '',
-                    date: document.getElementById('pDate').value,
-                    lastDate: document.getElementById('pDate').value,
-                    description: document.getElementById('pDesc').innerHTML.trim(),
-                    type: currentPlacementType,
-                    target: { type: targetType, courses, depts, students: selectedStudents }
-                };
-
-                let result;
-                if (editingPlacementId) {
-                    result = await db.updatePlacementActivity(editingPlacementId, activity);
-                    showPlacementAlert(result.message, result.success ? 'success' : 'danger');
-                    if (result.success) editingPlacementId = null;
-                } else {
-                    result = await db.addPlacementActivity(activity);
-                    showPlacementAlert(result.message, result.success ? 'success' : 'danger');
-                }
-                
-                if (result.success) {
-                    addPlacementForm.reset();
-                    document.getElementById('pDesc').innerHTML = '';
-                    closeModal(placementModal);
-                    renderPlacementActivities();
-                }
-            } finally {
-                if (submitBtn) submitBtn.disabled = false;
-            }
-        });
-    }
-
-    function renderPlacementActivities() {
-        const activities = db.getPlacementActivities() || [];
-        
-        const placementList = activities.filter(a => a.type === 'placement' || !a.type);
-        const recruitmentList = activities.filter(a => a.type === 'recruitment');
-
-        const actTbody = document.querySelector('#activityTable tbody');
-        const recTbody = document.querySelector('#recruitmentTable tbody');
-        
-        if(actTbody) actTbody.innerHTML = '';
-        if(recTbody) recTbody.innerHTML = '';
-
-        const today = new Date().toISOString().split('T')[0];
-
-        const createRow = (a) => {
-            let statusLabel = 'Upcoming';
-            let statusClass = 'status-badge-upcoming';
-            
-            if (a.lastDate && today > a.lastDate) {
-                statusLabel = 'Completed';
-                statusClass = 'status-badge-completed';
-            } else if (a.date && a.lastDate && today >= a.date && today <= a.lastDate) {
-                statusLabel = 'In-Progress';
-                statusClass = 'status-badge-progress';
-            } else if (!a.date || !a.lastDate) {
-                statusLabel = 'Unknown';
-                statusClass = 'status-badge-unknown';
-            }
-
-            return `
-            <tr>
-                <td style="text-align: left; vertical-align: middle;">
-                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                        <span class="badge ${a.type === 'recruitment' ? 'bg-success' : 'bg-primary'}" style="font-size: 10px; text-transform: capitalize; padding: 2px 7px; border-radius: 4px; font-weight: 600; white-space: nowrap;">${a.type === 'recruitment' ? 'Recruitment' : 'Activity'}</span>
-                        <strong style="color: #111827; font-size: 0.92rem;">${a.name}</strong>
-                    </div>
-                    ${a.description ? `<div class="small text-muted" style="max-width: 320px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35;">${a.description}</div>` : ''}
-                </td>
-                <td style="text-align: center; vertical-align: middle; white-space: nowrap;">
-                    <span class="text-danger fw-semibold" style="font-size: 0.85rem;">${a.date}</span>
-                </td>
-                ${a.type === 'recruitment' ? `
-                <td style="text-align: center; vertical-align: middle; white-space: nowrap;">
-                    <span class="jobrole-pill" title="${a.venue || ''}">${a.venue || '—'}</span>
-                </td>` : ''}
-                <td style="text-align: center; vertical-align: middle; white-space: nowrap;">
-                    <span class="small" style="color: #4b5563; font-weight: 500;">${a.target.type === 'all' ? 'All Students' : (a.target.type === 'course' ? (a.target.courses || []).length + ' Courses' : (a.target.type === 'dept' ? (a.target.depts || []).length + ' Depts' : (a.target.students || []).length + ' Students'))}</span>
-                </td>
-                <td style="text-align: center; vertical-align: middle; white-space: nowrap;">
-                    <span class="registered-count">${(a.registrations || []).length}</span>
-                </td>
-                <td style="text-align: center; vertical-align: middle; white-space: nowrap;">
-                    <span class="placement-status-badge ${statusClass}">${statusLabel}</span>
-                </td>
-                <td style="text-align: center; vertical-align: middle; white-space: nowrap;">
-                    <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <button class="btn btn-secondary btn-sm" onclick="openManagePlacementView('${a.id}')" title="Manage Activity" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Manage</button>
-                        ${Permissions.can(userRole, 'edit_training_drives') ? `
-                        <button class="btn btn-secondary btn-sm" onclick="editPlacementActivity('${a.id}')" title="Edit Info" style="padding: 0.35rem 0.5rem; display: inline-flex; align-items: center; justify-content: center;">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="deletePlacementActivity('${a.id}')" title="Delete" style="padding: 0.35rem 0.5rem; border: none; display: inline-flex; align-items: center; justify-content: center;">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        </button>
-                        ` : ''}
-                    </div>
-                </td>
-            </tr>
-        `};
-
-        if (actTbody) {
-            if (placementList.length === 0) {
-                actTbody.innerHTML = `<tr><td colspan="6" class="text-center">No placement activities found.</td></tr>`;
-            } else {
-                actTbody.innerHTML = placementList.map(a => createRow(a)).join('');
-            }
-        }
-
-        if (recTbody) {
-            if (recruitmentList.length === 0) {
-                recTbody.innerHTML = `<tr><td colspan="6" class="text-center">No recruitments found.</td></tr>`;
-            } else {
-                recTbody.innerHTML = recruitmentList.map(a => createRow(a)).join('');
-            }
-        }
-    }
-
-    let editingPlacementId = null;
-    window.editPlacementActivity = (id) => {
-        const activities = db.getPlacementActivities();
-        const a = activities.find(item => item.id === id);
-        if(a) {
-            editingPlacementId = id;
-            currentPlacementType = a.type || 'placement';
-            toggleFormFields(currentPlacementType);
-            document.getElementById('pName').value = a.name;
-            if (currentPlacementType === 'recruitment') {
-                document.getElementById('pVenue').value = a.venue || '';
-            }
-            document.getElementById('pDate').value = a.date;
-            document.getElementById('pDesc').innerHTML = a.description;
-            
-            // Set Target
-            const radios = document.querySelectorAll('input[name="pTargetType"]');
-            radios.forEach(r => {
-                if(r.value === a.target.type) r.checked = true;
-            });
-            
-            document.getElementById('pCourseListSection').classList.add('hidden');
-            document.getElementById('pDeptListSection').classList.add('hidden');
-            document.getElementById('pStudentListSection').classList.add('hidden');
-            if(a.target.type === 'course') {
-                document.getElementById('pCourseListSection').classList.remove('hidden');
-                populatePlacementFilters();
-                setTimeout(() => {
-                    (a.target.courses || []).forEach(c => {
-                        const cb = document.querySelector(`input[name="pCourses"][value="${c}"]`);
-                        if(cb) cb.checked = true;
-                    });
-                }, 100);
-            } else if(a.target.type === 'dept') {
-                document.getElementById('pDeptListSection').classList.remove('hidden');
-                populatePlacementFilters();
-                setTimeout(() => {
-                    (a.target.depts || []).forEach(d => {
-                        const cb = document.querySelector(`input[name="pDepts"][value="${d}"]`);
-                        if(cb) cb.checked = true;
-                    });
-                }, 100);
-            } else if(a.target.type === 'student') {
-                document.getElementById('pStudentListSection').classList.remove('hidden');
-                populatePlacementFilters();
-                setTimeout(() => {
-                    (a.target.students || []).forEach(s => {
-                        const cb = document.querySelector(`input[name="pStudentSelect"][value="${s}"]`);
-                        if(cb) cb.checked = true;
-                    });
-                }, 100);
-            }
-
-            openModal(placementModal);
-            placementModalTitle.textContent = 'Edit Placement Activity';
-            savePlacementBtn.textContent = 'Update Activity';
-        }
-    };
-
-    window.deletePlacementActivity = async (id) => {
-        if(confirm('Are you sure you want to delete this placement activity and all associated data?')) {
-            const result = await db.deletePlacementActivity(id);
-            if (result.success) {
-                renderPlacementActivities();
-                showPlacementAlert('Activity deleted successfully.', 'success');
-            } else {
-                showPlacementAlert(result.message || 'Error deleting activity.', 'danger');
-            }
-        }
-    };
-
-    // --- Minimalist Dashboard Implementation ---
+    // =========================================================================
+    // --- 6. DASHBOARD CHARTS & ANALYTICS ---
+    // =========================================================================
     function renderDashboard() {
-        if (!document.getElementById('dashTotalStudents')) return;
-
-        const students = db.getStudents() || [];
-        const programs = db.getTrainingPrograms() || [];
+        const students = db.getStudents();
         const activities = db.getPlacementActivities() || [];
-        
-        const placementActivities = activities.filter(a => a.type === 'placement' || !a.type);
-        const recruitmentActivities = activities.filter(a => a.type === 'recruitment');
 
-        // Top 4 Metrics (animated count-up)
-        window.animateCount('dashTotalStudents', students.length);
-        window.animateCount('dashTotalTrainings', programs.length);
-        window.animateCount('dashTotalActivities', placementActivities.length);
-        window.animateCount('dashTotalRecruitments', recruitmentActivities.length);
+        const totalStudents = students.length;
+        const totalActivities = activities.length;
 
-        // Placement Status Logic
+        // Unique partner companies derived from drives
+        const uniqueCompanies = new Set(activities.map(a => (a.name || '').split(' ')[0]).filter(Boolean)).size;
+
+        // Placed candidates
         let placedSet = new Set();
         let inProcessSet = new Set();
 
-        recruitmentActivities.forEach(a => {
-            const hasPhases = a.phases && a.phases.length > 0;
-            if (hasPhases) {
+        activities.forEach(a => {
+            if (a.phases && a.phases.length > 0) {
                 const finalPhase = a.phases[a.phases.length - 1];
                 (finalPhase.completions || []).forEach(reg => placedSet.add(reg));
-                
-                a.phases.forEach(ph => {
-                    if (ph !== finalPhase) {
-                        (ph.completions || []).forEach(reg => {
-                            if (!placedSet.has(reg)) inProcessSet.add(reg);
-                        });
-                    }
-                });
             }
-            (a.registeredStudents || []).forEach(reg => {
-                if (!placedSet.has(reg) && !inProcessSet.has(reg)) {
-                    inProcessSet.add(reg);
-                }
+            (a.registrations || []).forEach(reg => {
+                if (!placedSet.has(reg)) inProcessSet.add(reg);
             });
         });
 
-        // Setup Placed Students Table
-        function renderDashboardPlacedTable() {
-            const tableBody = document.querySelector('#dashboardPlacedTable tbody');
-            if (!tableBody) return;
+        const placedCount = placedSet.size;
+        const inProcessCount = inProcessSet.size;
+        const unplacedCount = Math.max(0, totalStudents - placedCount - inProcessCount);
 
-            const courseFilter = document.getElementById('dashFilterCourse').value;
-            const deptFilter = document.getElementById('dashFilterDept').value;
+        // Update Stat Cards
+        const totalStudentsEl = document.getElementById('dashTotalStudents');
+        if (totalStudentsEl) totalStudentsEl.textContent = totalStudents;
 
-            let filteredStudents = students;
-            if (courseFilter) filteredStudents = filteredStudents.filter(s => s.course === courseFilter);
-            if (deptFilter) filteredStudents = filteredStudents.filter(s => s.department === deptFilter);
+        const totalCompaniesEl = document.getElementById('dashTotalCompanies');
+        if (totalCompaniesEl) totalCompaniesEl.textContent = uniqueCompanies || totalActivities;
 
-            const studentPlacementMap = {};
-            const studentActivitiesCount = {};
-            const studentRecruitmentsCount = {};
+        const totalActivitiesEl = document.getElementById('dashTotalActivities');
+        if (totalActivitiesEl) totalActivitiesEl.textContent = totalActivities;
 
-            activities.forEach(a => {
-                (a.registrations || []).forEach(reg => {
-                    if (a.type === 'recruitment') {
-                        studentRecruitmentsCount[reg] = (studentRecruitmentsCount[reg] || 0) + 1;
-                    } else {
-                        studentActivitiesCount[reg] = (studentActivitiesCount[reg] || 0) + 1;
+        const totalPlacedEl = document.getElementById('dashTotalPlaced');
+        if (totalPlacedEl) totalPlacedEl.textContent = placedCount;
+
+        const placementTotalEl = document.getElementById('dashPlacementTotalText');
+        if (placementTotalEl) placementTotalEl.textContent = `Total: ${totalStudents}`;
+
+        const placementPercent = totalStudents > 0 ? Math.round((placedCount / totalStudents) * 100) : 0;
+        const percentEl = document.getElementById('placementPercentText');
+        if (percentEl) percentEl.textContent = `${placementPercent}%`;
+
+        // Placement Status Donut Chart with Marian Palette
+        const pCtx = document.getElementById('placementStatusChart');
+        if (pCtx) {
+            if (window.placementChartInst) window.placementChartInst.destroy();
+            window.placementChartInst = new Chart(pCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Placed Students', 'In Process', 'Unplaced'],
+                    datasets: [{
+                        data: [placedCount, inProcessCount, unplacedCount],
+                        backgroundColor: ['#A00000', '#0B1F3A', '#94A3B8'],
+                        borderWidth: 5,
+                        borderColor: '#FFFFFF',
+                        cutout: '78%',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: true }
                     }
-                });
-                
-                if (a.phases && a.phases.length > 0) {
-                    const finalPhase = a.phases[a.phases.length - 1];
-                    (finalPhase.completions || []).forEach(reg => {
-                        if (!studentPlacementMap[reg]) studentPlacementMap[reg] = [];
-                        if (!studentPlacementMap[reg].includes(a.name)) studentPlacementMap[reg].push(a.name);
-                    });
                 }
             });
-
-            const placedStudentsData = filteredStudents.filter(s => studentPlacementMap[s.registerNumber]).map(s => {
-                return {
-                    name: s.name,
-                    department: s.department,
-                    course: s.course,
-                    activities: studentActivitiesCount[s.registerNumber] || 0,
-                    recruitments: studentRecruitmentsCount[s.registerNumber] || 0,
-                    placedRecruitment: studentPlacementMap[s.registerNumber].join(', ')
-                };
-            });
-
-            tableBody.innerHTML = '';
-            if (placedStudentsData.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No placed students found matching filters.</td></tr>';
-                return;
-            }
-
-            placedStudentsData.forEach(s => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${s.name}</strong></td>
-                    <td>${s.department}</td>
-                    <td>${s.course}</td>
-                    <td><span class="badge bg-primary" style="font-size: 11px;">${s.activities}</span></td>
-                    <td><span class="badge bg-secondary" style="font-size: 11px;">${s.recruitments}</span></td>
-                    <td><span class="badge bg-success" style="font-size: 11px;">${s.placedRecruitment}</span></td>
-                `;
-                tableBody.appendChild(tr);
-            });
-
-            // --- Render Course & Gender Chart ---
-            const courseGenderStats = {};
-            const placedStudentsRaw = students.filter(s => studentPlacementMap[s.registerNumber]);
-            
-            placedStudentsRaw.forEach(s => {
-                const course = s.course || 'Unknown';
-                const gender = (s.gender || 'Other').toLowerCase();
-                if (!courseGenderStats[course]) courseGenderStats[course] = { male: 0, female: 0, other: 0 };
-                
-                if (gender === 'male') courseGenderStats[course].male++;
-                else if (gender === 'female') courseGenderStats[course].female++;
-                else courseGenderStats[course].other++;
-            });
-
-            const labels = Object.keys(courseGenderStats);
-            const maleData = labels.map(c => courseGenderStats[c].male);
-            const femaleData = labels.map(c => courseGenderStats[c].female);
-            const otherData = labels.map(c => courseGenderStats[c].other);
-
-            const cgCtx = document.getElementById('courseGenderChart');
-            if (cgCtx) {
-                if (window.courseGenderChartInst) window.courseGenderChartInst.destroy();
-                window.courseGenderChartInst = new Chart(cgCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Male',
-                                data: maleData,
-                                backgroundColor: '#3b82f6',
-                                borderRadius: 4
-                            },
-                            {
-                                label: 'Female',
-                                data: femaleData,
-                                backgroundColor: '#ec4899',
-                                borderRadius: 4
-                            },
-                            {
-                                label: 'Other',
-                                data: otherData,
-                                backgroundColor: '#f59e0b',
-                                borderRadius: 4
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false
-                            }
-                        },
-                        scales: {
-                            x: {
-                                stacked: false,
-                                grid: { display: false }
-                            },
-                            y: {
-                                stacked: false,
-                                beginAtZero: true,
-                                ticks: { stepSize: 1 }
-                            }
-                        }
-                    }
-                });
-            }
         }
 
-        // Populate Dashboard Filters once
-        const dashCourseSelect = document.getElementById('dashFilterCourse');
-        const dashDeptSelect = document.getElementById('dashFilterDept');
+        // Activity Attendance Chart
         const dashActivitySelect = document.getElementById('dashFilterActivity');
-
-        if (dashCourseSelect && dashDeptSelect && dashCourseSelect.options.length <= 1) {
-            const courses = [...new Set(students.map(s => s.course).filter(c => c))];
-            const depts = [...new Set(students.map(s => s.department).filter(d => d))];
-            
-            courses.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c; opt.textContent = c;
-                dashCourseSelect.appendChild(opt);
-            });
-            depts.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d; opt.textContent = d;
-                dashDeptSelect.appendChild(opt);
-            });
-
-            dashCourseSelect.addEventListener('change', renderDashboardPlacedTable);
-            dashDeptSelect.addEventListener('change', renderDashboardPlacedTable);
-        }
-
-        if (dashActivitySelect && dashActivitySelect.options.length <= 1) {
+        if (dashActivitySelect) {
+            dashActivitySelect.innerHTML = '<option value="">Select Drive...</option>';
             activities.forEach(a => {
                 const opt = document.createElement('option');
                 opt.value = a.id;
                 opt.textContent = a.name;
                 dashActivitySelect.appendChild(opt);
             });
-            
-            if(activities.length > 0) {
+
+            if (activities.length > 0) {
                 dashActivitySelect.value = activities[0].id;
             }
 
-            dashActivitySelect.addEventListener('change', renderActivityAttendanceChart);
+            dashActivitySelect.addEventListener('change', renderActivityChart);
         }
 
-        // --- Render Activity Course-wise Attendance Chart ---
-        function renderActivityAttendanceChart() {
+        function renderActivityChart() {
             const actId = dashActivitySelect ? dashActivitySelect.value : null;
-            if (!actId) return;
+            const ctx = document.getElementById('activityAttendanceChart');
+            if (!ctx || !actId) return;
 
             const selectedAct = activities.find(a => a.id === actId);
             if (!selectedAct) return;
@@ -2020,1316 +1133,62 @@ document.addEventListener('DOMContentLoaded', async () => {
             const courseCounts = {};
             (selectedAct.registrations || []).forEach(reg => {
                 const student = students.find(s => s.registerNumber === reg);
-                const course = student && student.course ? student.course : 'Unknown';
+                const course = student && student.course ? student.course : 'General';
                 courseCounts[course] = (courseCounts[course] || 0) + 1;
             });
 
             const labels = Object.keys(courseCounts);
             const data = labels.map(c => courseCounts[c]);
 
-            const ctx = document.getElementById('activityAttendanceChart');
-            if (ctx) {
-                if (window.activityAttendanceChartInst) window.activityAttendanceChartInst.destroy();
-                window.activityAttendanceChartInst = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Registered Students',
-                            data: data,
-                            backgroundColor: '#10b981',
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { mode: 'index', intersect: false }
-                        },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                            x: { grid: { display: false } }
-                        }
-                    }
-                });
-            }
-        }
-
-        renderDashboardPlacedTable();
-        renderActivityAttendanceChart();
-
-        const totalStudents = students.length;
-        const placedCount = placedSet.size;
-        const inProcessCount = inProcessSet.size;
-        const unplacedCount = Math.max(0, totalStudents - placedCount - inProcessCount);
-
-        document.getElementById('dashPlacementTotalText').textContent = `Total: ${totalStudents}`;
-        const placementPercent = totalStudents > 0 ? Math.round((placedCount / totalStudents) * 100) : 0;
-        document.getElementById('placementPercentText').textContent = `${placementPercent}%`;
-
-        const pCtx = document.getElementById('placementStatusChart');
-        if (window.placementChartInst) window.placementChartInst.destroy();
-        window.placementChartInst = new Chart(pCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Placed Students', 'In Process', 'Unplaced'],
-                datasets: [{
-                    data: [placedCount, inProcessCount, unplacedCount],
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
-                    borderWidth: 6,
-                    borderColor: '#ffffff',
-                    cutout: '80%',
-                    borderRadius: 20
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: true },
-                    datalabels: { display: false }
-                }
-            }
-        });
-
-        // Training Status Logic
-        let completedTrainingSet = new Set();
-        let attendingTrainingSet = new Set();
-
-        programs.forEach(p => {
-            const sessionCount = (p.sessions || []).length;
-            if (sessionCount === 0) return;
-
-            const studentAttendance = {};
-            p.sessions.forEach(s => {
-                (s.attendance || []).forEach(reg => {
-                    studentAttendance[reg] = (studentAttendance[reg] || 0) + 1;
-                    attendingTrainingSet.add(reg);
-                });
-            });
-
-            Object.entries(studentAttendance).forEach(([reg, count]) => {
-                if (count === sessionCount) {
-                    completedTrainingSet.add(reg);
-                }
-            });
-        });
-
-        completedTrainingSet.forEach(reg => attendingTrainingSet.delete(reg));
-        const completedTrainCount = completedTrainingSet.size;
-        const attendingTrainCount = attendingTrainingSet.size;
-        const notAttendingCount = Math.max(0, totalStudents - completedTrainCount - attendingTrainCount);
-
-        document.getElementById('dashTrainingTotalText').textContent = `Total: ${totalStudents}`;
-        const trainingPercent = totalStudents > 0 ? Math.round((completedTrainCount / totalStudents) * 100) : 0;
-        document.getElementById('trainingPercentText').textContent = `${trainingPercent}%`;
-
-        const tCtx = document.getElementById('trainingStatusChart');
-        if (window.trainingChartInst) window.trainingChartInst.destroy();
-        window.trainingChartInst = new Chart(tCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Attending Trainings', 'Completed Trainings', 'Not Attending'],
-                datasets: [{
-                    data: [attendingTrainCount, completedTrainCount, notAttendingCount],
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
-                    borderWidth: 6,
-                    borderColor: '#ffffff',
-                    cutout: '80%',
-                    borderRadius: 20
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: true },
-                    datalabels: { display: false }
-                }
-            }
-        });
-    }
-
-    // ==========================================
-    // --- Manage Placement Sub-View Logic ---
-    // ==========================================
-    let currentActivityId = null;
-    let currentActivity = null;
-    let editingPhaseId = null;
-
-    function openManagePlacementView(id, subTab = 'funnel', updateHash = true, uiOnly = false) {
-        currentActivityId = id;
-        
-        // Force the Manage view to be visible immediately to prevent fallback to list/dashboard
-        document.getElementById('placementListTabs').classList.add('hidden');
-        document.getElementById('placementListView').classList.add('hidden');
-        document.getElementById('placementManageView').classList.remove('hidden');
-        
-        // Reset all tabs UI immediately
-        const mTabs = document.querySelectorAll('.m-sub-tab');
-        const mPages = document.querySelectorAll('.manage-sub-page');
-        mTabs.forEach(t => t.classList.remove('active'));
-        mPages.forEach(p => p.classList.add('hidden'));
-        
-        const targetTab = Array.from(mTabs).find(t => t.dataset.tab === subTab) || mTabs[0];
-        if (targetTab) {
-            targetTab.classList.add('active');
-            const targetTabId = targetTab.dataset.tab;
-            const targetPage = document.getElementById(`${targetTabId}Tab`);
-            if (targetPage) targetPage.classList.remove('hidden');
-        }
-
-        if (uiOnly) return; // Skip data fetching if only UI state is requested
-
-        const activities = db.getPlacementActivities() || [];
-        currentActivity = activities.find(a => a.id === id);
-        
-        if (!currentActivity) {
-            console.warn("Placement activity not found in cache for ID:", id);
-            document.getElementById('manageActivityTitle').textContent = "Loading Activity...";
-            setTimeout(() => {
-                const refreshedActivities = db.getPlacementActivities() || [];
-                currentActivity = refreshedActivities.find(a => a.id === id);
-                if (currentActivity) {
-                    window.openManagePlacementView(id, subTab, updateHash, false);
-                } else {
-                    document.getElementById('manageActivityTitle').textContent = "Activity Not Found";
-                }
-            }, 1000);
-            return;
-        }
-
-        document.getElementById('manageActivityTitle').textContent = currentActivity.name;
-        
-        if (targetTab) {
-            const targetTabId = targetTab.dataset.tab;
-            if (targetTabId === 'funnel') renderFunnel();
-            else if (targetTabId === 'phases') renderPhases();
-            else if (targetTabId === 'students') renderStudentTracking();
-        }
-
-        if (updateHash) {
-            const newHash = `placement/manage/${id}/${targetTab.dataset.tab}`;
-            if (window.location.hash !== `#${newHash}`) {
-                // Only push state if we want to change history, else replace
-                window.location.hash = newHash;
-            }
-        }
-    }
-    window.openManagePlacementView = openManagePlacementView;
-
-    window.closeManagePlacementView = (updateHash = true) => {
-        currentActivityId = null;
-        currentActivity = null;
-        document.getElementById('placementListTabs').classList.remove('hidden');
-        document.getElementById('placementListView').classList.remove('hidden');
-        document.getElementById('placementManageView').classList.add('hidden');
-        renderPlacementActivities(); // Refresh list to reflect any changes
-        
-        if (updateHash && window.location.hash.includes('placement/manage')) {
-            window.location.hash = 'placement';
-        }
-    };
-
-    // Tab Logic for Manage View
-    const mTabs = document.querySelectorAll('.m-sub-tab');
-    const mPages = document.querySelectorAll('.manage-sub-page');
-    mTabs.forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (currentActivityId) {
-                window.location.hash = `placement/manage/${currentActivityId}/${tab.dataset.tab}`;
-            }
-        });
-    });
-
-    const addPhaseBtn = document.getElementById('addPhaseBtn');
-    if(addPhaseBtn) {
-        addPhaseBtn.onclick = () => {
-            editingPhaseId = null;
-            const form = document.getElementById('phaseForm');
-            if (form) form.reset();
-            const desc = document.getElementById('phaseDesc');
-            if (desc) desc.innerHTML = '';
-            document.getElementById('modalTitle').textContent = 'Add Selection Phase';
-            
-            // Ensure submit button is re-enabled if previously stuck
-            const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
-            if (submitBtn) submitBtn.disabled = false;
-
-            openModal(document.getElementById('phaseModal'));
-        };
-    }
-
-    const phaseForm = document.getElementById('phaseForm');
-    if(phaseForm) {
-        phaseForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            if (submitBtn) submitBtn.disabled = true;
-            
-            try {
-                const phaseModeInput = document.querySelector('input[name="phaseMode"]:checked');
-                const phase = {
-                    name: document.getElementById('phaseName').value,
-                    description: document.getElementById('phaseDesc').innerHTML,
-                    lastDate: document.getElementById('phaseLastDate').value,
-                    mode: phaseModeInput ? phaseModeInput.value : 'admin'
-                };
-
-                let result;
-                if (editingPhaseId) {
-                    result = await db.updatePlacementPhase(currentActivityId, editingPhaseId, phase);
-                } else {
-                    result = await db.addPlacementPhase(currentActivityId, phase);
-                }
-
-                if (result.success) {
-                    // Update currentActivity explicitly from DB after success
-                    const activities = db.getPlacementActivities() || [];
-                    currentActivity = activities.find(a => a.id === currentActivityId);
-                    
-                    phaseForm.reset();
-                    document.getElementById('phaseDesc').innerHTML = '';
-                    closeModal(document.getElementById('phaseModal'));
-                    
-                    const activeTab = document.querySelector('.m-sub-tab.active');
-                    if (activeTab) {
-                        const tabId = activeTab.dataset.tab;
-                        if (tabId === 'phases') renderPhases();
-                        else if (tabId === 'funnel') renderFunnel();
-                        else if (tabId === 'students') renderStudentTracking();
-                    } else {
-                        renderPhases();
-                    }
-                } else {
-                    alert(result.message || 'Failed to save phase.');
-                }
-            } catch (error) {
-                console.error("Error saving phase:", error);
-                alert("An error occurred while saving the phase. Please try again.");
-            } finally {
-                if (submitBtn) submitBtn.disabled = false;
-            }
-        };
-    }
-
-    window.editPhase = (id) => {
-        editingPhaseId = id;
-        const p = currentActivity.phases.find(phase => phase.id === id);
-        document.getElementById('phaseName').value = p.name;
-        document.getElementById('phaseDesc').innerHTML = p.description || '';
-        document.getElementById('phaseLastDate').value = p.lastDate;
-        const radios = document.querySelectorAll('input[name="phaseMode"]');
-        radios.forEach(r => { if(r.value === p.mode) r.checked = true; });
-
-        document.getElementById('modalTitle').textContent = 'Edit Selection Phase';
-        openModal(document.getElementById('phaseModal'));
-    };
-
-    window.deletePhase = async (id) => {
-        if (confirm('Are you sure you want to delete this phase and all student completion data?')) {
-            const result = await db.deletePlacementPhase(currentActivityId, id);
-            if (result.success) {
-                currentActivity = db.getPlacementActivities().find(a => a.id === currentActivityId);
-                const activeTab = document.querySelector('.m-sub-tab.active');
-                if (activeTab) {
-                    const tabId = activeTab.dataset.tab;
-                    if (tabId === 'phases') renderPhases();
-                    else if (tabId === 'funnel') renderFunnel();
-                    else if (tabId === 'students') renderStudentTracking();
-                } else {
-                    renderPhases();
-                }
-            }
-        }
-    };
-
-    window.openDeclaration = (phaseId) => {
-        const phase = currentActivity.phases.find(p => p.id === phaseId);
-        document.getElementById('declPhaseName').textContent = `Declare: ${phase.name}`;
-        
-        const students = db.getStudents();
-        const container = document.getElementById('declStudentList');
-        container.innerHTML = '';
-
-        const phaseIdx = currentActivity.phases.findIndex(p => p.id === phaseId);
-        let pool = [];
-        if (phaseIdx === 0) {
-            pool = students.filter(s => currentActivity.registrations.includes(s.registerNumber));
-        } else {
-            const prevPhase = currentActivity.phases[phaseIdx - 1];
-            pool = students.filter(s => prevPhase.completions.includes(s.registerNumber));
-        }
-
-        pool.forEach(s => {
-            const isChecked = phase.completions.includes(s.registerNumber);
-            container.innerHTML += `
-                <div class="d-flex align-items-center gap-3 p-2 border-bottom hover-bg-light">
-                    <input type="checkbox" name="declCheck" value="${s.registerNumber}" ${isChecked ? 'checked' : ''} style="width: 18px; height: 18px;">
-                    <div>
-                        <div style="font-size: 13px; font-weight: 600;">${s.name}</div>
-                        <div class="text-muted" style="font-size: 11px;">${s.registerNumber} | ${s.course}</div>
-                    </div>
-                </div>
-            `;
-        });
-
-        document.getElementById('saveDeclarationBtn').onclick = async () => {
-            const selected = Array.from(document.querySelectorAll('input[name="declCheck"]:checked')).map(cb => cb.value);
-            
-            const result = await db.updatePhaseCompletions(currentActivityId, phaseId, selected);
-            if (result.success) {
-                closeModal(document.getElementById('declarationModal'));
-                openManagePlacementView(currentActivityId);
-            } else {
-                alert(result.message || 'Error updating qualifications.');
-            }
-        };
-
-        openModal(document.getElementById('declarationModal'));
-    };
-
-    const exportReportBtn = document.getElementById('exportReportBtn');
-    if(exportReportBtn) {
-        exportReportBtn.onclick = () => {
-            if(!window.XLSX) {
-                alert("XLSX library not loaded!");
-                return;
-            }
-            const students = db.getStudents();
-            const reportData = [];
-
-            const headers = ["Register No", "Name", "Course", "Department", "Registration Status"];
-            currentActivity.phases.forEach(p => headers.push(p.name));
-            reportData.push(headers);
-
-            const registered = students.filter(s => currentActivity.registrations.includes(s.registerNumber));
-            registered.forEach(s => {
-                const row = [s.registerNumber, s.name, s.course, s.department, "Registered"];
-                currentActivity.phases.forEach(p => {
-                    row.push(p.completions.includes(s.registerNumber) ? "QUALIFIED" : "PENDING/DROPPED");
-                });
-                reportData.push(row);
-            });
-
-            reportData.push([]);
-            reportData.push(["PHASE DROPOUT SUMMARY"]);
-            currentActivity.phases.forEach((p, i) => {
-                reportData.push([`Students who DROPPED OUT at: ${p.name}`]);
-                let pool = [];
-                if (i === 0) {
-                    pool = registered;
-                } else {
-                    const prevPhase = currentActivity.phases[i - 1];
-                    pool = registered.filter(s => prevPhase.completions.includes(s.registerNumber));
-                }
-                
-                const dropped = pool.filter(s => !p.completions.includes(s.registerNumber));
-                dropped.forEach(s => reportData.push([s.registerNumber, s.name, s.course]));
-                reportData.push([]);
-            });
-
-            const ws = XLSX.utils.aoa_to_sheet(reportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Placement Report");
-            XLSX.writeFile(wb, `${currentActivity.name.replace(/\s+/g, '_')}_Report.xlsx`);
-        };
-    }
-
-    function renderPhases() {
-        const list = document.getElementById('phasesList');
-        if(!list) return;
-        list.innerHTML = '';
-
-        if (!currentActivity.phases || currentActivity.phases.length === 0) {
-            list.innerHTML = '<div class="text-center text-muted py-5" style="background: #fff; border-radius: 8px; border: 1px dashed #e5e7eb;"><p class="mb-0">No selection phases defined yet. Click "Add New Phase" to start.</p></div>';
-            return;
-        }
-
-        currentActivity.phases.forEach((p, idx) => {
-            const card = document.createElement('div');
-            card.className = 'phase-card-item';
-            card.style.borderLeft = `5px solid ${idx % 2 === 0 ? '#0D6EFC' : '#6366f1'}`;
-            
-            card.innerHTML = `
-                <div class="phase-card-grid">
-                    <!-- Column 1: Details -->
-                    <div class="phase-card-col-details">
-                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                            <span class="badge bg-primary" style="font-size: 11px; padding: 4px 8px; border-radius: 6px;">Phase ${idx + 1}</span>
-                            <strong style="color: #111827; font-size: 0.95rem;">${p.name}</strong>
-                        </div>
-                        <div class="text-muted small" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35;">${p.description || 'No description provided.'}</div>
-                    </div>
-                    
-                    <!-- Column 2: Mode -->
-                    <div>
-                        <div style="font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">DECLARATION MODE</div>
-                        <div>
-                            <span class="badge ${p.mode === 'admin' ? 'bg-secondary' : 'bg-success'}" style="font-weight: 500; font-size: 11px; padding: 4px 8px; border-radius: 6px;">${p.mode === 'admin' ? 'Admin Declared' : 'Self Declared'}</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Column 3: Deadline -->
-                    <div>
-                        <div style="font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">DUE DATE</div>
-                        <div style="font-size: 0.85rem; font-weight: 600; color: #111827;">${p.lastDate || '—'}</div>
-                    </div>
-                    
-                    <!-- Column 4: Qualified -->
-                    <div>
-                        <div style="font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">QUALIFIED</div>
-                        <div style="font-size: 1rem; font-weight: 700; color: #0D6EFC;">${(p.completions || []).length}</div>
-                    </div>
-
-                    <!-- Column 5: Actions -->
-                    <div class="phase-card-col-actions d-flex gap-2 justify-content-end align-items-center">
-                        ${p.mode === 'admin' ? `<button class="btn btn-sm" style="background-color: #000080; color: white; font-weight: 600; font-size: 12px; padding: 6px 12px; white-space: nowrap; border-radius: 6px;" onclick="openDeclaration('${p.id}')">Declare Status</button>` : ''}
-                        ${Permissions.can(userRole, 'edit_training_drives') ? `
-                        <button class="btn btn-light btn-sm" style="font-weight: 600; border: 1px solid #e5e7eb; font-size: 12px; padding: 6px 12px; border-radius: 6px;" onclick="editPhase('${p.id}')">Edit</button>
-                        <button class="btn btn-danger btn-sm" onclick="deletePhase('${p.id}')" style="font-weight: 600; font-size: 12px; padding: 6px 10px; border-radius: 6px; border: none;" title="Delete Phase">✕</button>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-            list.appendChild(card);
-        });
-    }
-
-    function renderFunnel() {
-        const funnel = document.getElementById('funnelChart');
-        if(!funnel) return;
-        funnel.innerHTML = '';
-
-        const registrationCount = (currentActivity.registrations || []).length;
-        const stages = [
-            { name: 'Registrations', count: registrationCount, color: '#1e293b' }
-        ];
-
-        (currentActivity.phases || []).forEach((p, idx) => {
-            stages.push({
-                name: p.name,
-                count: (p.completions || []).length,
-                color: `hsl(${215}, ${70}%, ${40 + (idx * 8)}%)`
-            });
-        });
-
-        const maxWidth = 340;
-        stages.forEach((stage) => {
-            const width = maxWidth * (registrationCount === 0 ? 1 : (stage.count / registrationCount || 0.15));
-            const div = document.createElement('div');
-            div.className = 'funnel-stage';
-            div.style.width = Math.max(width, 120) + 'px';
-            div.style.backgroundColor = stage.color;
-            const percent = registrationCount === 0 ? '0%' : Math.round((stage.count / registrationCount) * 100) + '%';
-            div.innerHTML = `
-                <span class="funnel-label" title="${stage.name}">${stage.name}</span>
-                <span class="funnel-count-pill">${stage.count}</span>
-                <span class="funnel-value">${percent}</span>
-            `;
-            funnel.appendChild(div);
-        });
-    }
-
-    function renderStudentTracking() {
-        const list = document.getElementById('studentTrackList');
-        if(!list) return;
-        list.innerHTML = '';
-        
-        const students = db.getStudents();
-        const registered = students.filter(s => (currentActivity.registrations || []).includes(s.registerNumber));
-
-        if (registered.length === 0) {
-            list.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-5">No registered students yet for this activity.</td></tr>';
-            return;
-        }
-
-        registered.forEach(s => {
-            let currentPhaseIdx = -1;
-            (currentActivity.phases || []).forEach((p, i) => {
-                if ((p.completions || []).includes(s.registerNumber)) currentPhaseIdx = i;
-            });
-
-            const isQualified = currentActivity.phases && currentActivity.phases.length > 0 && currentPhaseIdx === currentActivity.phases.length - 1;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>
-                    <div style="font-weight: 600; color: #111827;">${s.name}</div>
-                    <div class="text-muted small">${s.registerNumber}</div>
-                </td>
-                <td>
-                    <div class="small fw-semibold" style="color: #374151;">${s.course}</div>
-                    <div class="text-muted" style="font-size: 11px;">${s.department}</div>
-                </td>
-                <td>
-                    <span class="badge ${currentPhaseIdx === -1 ? 'bg-light text-dark' : 'bg-primary-light text-primary'}" style="font-size: 11px; padding: 4px 8px; border-radius: 6px;">
-                        ${currentPhaseIdx === -1 ? 'Registered' : currentActivity.phases[currentPhaseIdx].name}
-                    </span>
-                </td>
-                <td>
-                    <span class="status-pill ${isQualified ? 'status-qualified' : (currentPhaseIdx === -1 ? 'status-dropped' : 'status-pending')}">
-                        ${isQualified ? 'Final Qualified' : (currentPhaseIdx === -1 ? 'Registered' : 'In Progress')}
-                    </span>
-                </td>
-            `;
-            list.appendChild(tr);
-        });
-    }
-
-    // ==========================================
-    // --- Class View (class-wise tracking) ---
-    // ==========================================
-    function yearFromClass(className) {
-        const m = String(className || '').match(/(\d+)/);
-        return m ? m[1] : '';
-    }
-
-    // Per-student stats across ALL training programs
-    function studentTrainingStats(regNo) {
-        const programs = db.getTrainingPrograms();
-        const details = [];
-        let registered = 0, attended = 0, completed = 0;
-        programs.forEach(p => {
-            if (!(p.registrations || []).includes(regNo)) return;
-            registered++;
-            const batch = (p.batches || []).find(b => (b.students || []).includes(regNo));
-            const bid = batch ? batch.id : '';
-            const applicable = (p.sessions || []).filter(s => !s.batchId || s.batchId === bid);
-            const att = applicable.filter(s => (s.attendance || []).includes(regNo)).length;
-            const pct = applicable.length ? Math.round(att / applicable.length * 100) : 0;
-            const isAttended = att > 0;
-            const isCompleted = isAttended && pct >= 75;
-            if (isAttended) attended++;
-            if (isCompleted) completed++;
-            details.push({ name: p.name, total: applicable.length, att, pct, attended: isAttended, completed: isCompleted });
-        });
-        return { registered, attended, notAttended: registered - attended, completed, details };
-    }
-
-    function getClassGroups() {
-        const students = db.getStudents();
-        const courseF = (document.getElementById('classCourseFilter') || {}).value || '';
-        const deptF = (document.getElementById('classDeptFilter') || {}).value || '';
-        const yearF = (document.getElementById('classYearFilter') || {}).value || '';
-        
-        const filtered = students.filter(s => {
-            if (courseF && s.course !== courseF) return false;
-            if (deptF && s.department !== deptF) return false;
-            if (yearF && yearFromClass(s.class) !== yearF) return false;
-            return s.class && String(s.class).trim();
-        });
-        
-        const groups = {};
-        
-        // Seed groups with all known classes in db.getClassIncharges()
-        const incharges = db.getClassIncharges();
-        incharges.forEach(c => {
-            if (c.className && String(c.className).trim()) {
-                const hasMatch = students.some(s => s.class === c.className && 
-                    (!courseF || s.course === courseF) && 
-                    (!deptF || s.department === deptF) && 
-                    (!yearF || yearFromClass(s.class) === yearF)
-                );
-                
-                if (!courseF && !deptF && !yearF) {
-                    groups[c.className] = [];
-                } else if (hasMatch) {
-                    groups[c.className] = [];
-                }
-            }
-        });
-
-        // Now populate groups with filtered students
-        filtered.forEach(s => { 
-            groups[s.class] = groups[s.class] || [];
-            groups[s.class].push(s); 
-        });
-        
-        return groups;
-    }
-
-    window.renderClassView = function () {
-        const students = db.getStudents();
-        // Populate filters once
-        const courseSel = document.getElementById('classCourseFilter');
-        const deptSel = document.getElementById('classDeptFilter');
-        const yearSel = document.getElementById('classYearFilter');
-        if (courseSel && courseSel.options.length <= 1) {
-            [...new Set(students.map(s => s.course).filter(Boolean))].sort().forEach(c => courseSel.add(new Option(c, c)));
-        }
-        if (deptSel && deptSel.options.length <= 1) {
-            [...new Set(students.map(s => s.department).filter(Boolean))].sort().forEach(d => deptSel.add(new Option(d, d)));
-        }
-        if (yearSel && yearSel.options.length <= 1) {
-            [...new Set(students.map(s => yearFromClass(s.class)).filter(Boolean))].sort().forEach(y => yearSel.add(new Option('Year ' + y, y)));
-        }
-        if (courseSel && !courseSel.dataset.bound) { courseSel.dataset.bound = '1'; courseSel.addEventListener('change', renderClassView); deptSel.addEventListener('change', renderClassView); yearSel.addEventListener('change', renderClassView); }
-
-        const groups = getClassGroups();
-        const container = document.getElementById('classCards');
-        const classNames = Object.keys(groups).sort();
-        if (classNames.length === 0) {
-            container.innerHTML = '<p class="text-muted">No classes found. Click "+ Create Class" above or add a Class/Section to students to populate this view.</p>';
-            return;
-        }
-        container.innerHTML = classNames.map(cn => {
-            const list = groups[cn];
-            let reg = 0, att = 0, notAtt = 0;
-            list.forEach(s => { const st = studentTrainingStats(s.registerNumber); reg += st.registered; att += st.attended; notAtt += st.notAttended; });
-            const incharge = db.getClassIncharge(cn) || '—';
-            const safe = cn.replace(/'/g, "\\'");
-            return `
-                <div class="class-card-premium">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h4 style="margin:0; color:#0f172a; font-weight: 800; font-size:1.15rem; letter-spacing:-0.02em;">${cn}</h4>
-                            <small class="text-muted" style="font-size:0.82rem; margin-top:0.25rem; display:block;">Incharge: <strong id="inch_${btoa(cn).replace(/=/g,'')}" style="color:#475569;">${incharge}</strong>
-                                <a href="#" onclick="editClassIncharge('${safe}');return false;" style="margin-left:6px; font-size:0.75rem; color:#2563eb; font-weight:600; text-decoration:none;">✏️ edit</a>
-                                <a href="#" onclick="confirmDeleteClass('${safe}');return false;" style="margin-left:8px; font-size:0.75rem; color:#dc2626; font-weight:600; text-decoration:none;">🗑️ delete</a>
-                            </small>
-                        </div>
-                        <span class="badge" style="background:#eff6ff; color:#2563eb; font-weight:700; font-size:0.8rem; padding:6px 12px; border-radius:8px;">${list.length} students</span>
-                    </div>
-                    <div class="d-flex gap-2 mb-4" style="flex-wrap:wrap;">
-                        <span class="status-pill status-qualified" style="background:#ecfdf5; color:#065f46; font-weight:600; border-radius:6px; font-size:0.75rem;">Registered: ${reg}</span>
-                        <span class="status-pill status-pending" style="background:#fffbeb; color:#92400e; font-weight:600; border-radius:6px; font-size:0.75rem;">Attended: ${att}</span>
-                        <span class="status-pill status-dropped" style="background:#fef2f2; color:#991b1b; font-weight:600; border-radius:6px; font-size:0.75rem;">Not Attended: ${notAtt}</span>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary btn-sm" onclick="classReport1('${safe}')" style="font-weight:600; border-radius:8px; padding:6px 12px; font-size:0.78rem;">Report 1 · Students</button>
-                        <button class="btn btn-secondary btn-sm" onclick="classReport2('${safe}')" style="font-weight:600; border-radius:8px; padding:6px 12px; font-size:0.78rem;">Report 2 · Programs</button>
-                    </div>
-                </div>`;
-        }).join('');
-    };
-
-    window.editClassIncharge = function (className) {
-        const current = db.getClassIncharge(className) || '';
-        const name = prompt(`Class Incharge for "${className}":`, current);
-        if (name !== null) {
-            db.setClassIncharge(className, name.trim());
-            renderClassView();
-        }
-    };
-
-    window.confirmDeleteClass = async function (className) {
-        if (confirm(`Are you sure you want to delete class "${className}"? This will also unassign all students in this class.`)) {
-            const result = await db.deleteClass(className);
-            if (result.success) {
-                renderClassView();
-            }
-        }
-    };
-
-    window.openCreateClassModal = function() {
-        const className = prompt("Enter new Class Name (e.g. 1 BCA A):");
-        if (!className || !className.trim()) return;
-        
-        const incharge = prompt(`Enter Class Incharge Name for "${className.trim()}":`);
-        db.setClassIncharge(className.trim(), (incharge || '').trim());
-        renderClassView();
-    };
-
-    function openClassModal(title, html) {
-        document.getElementById('classModalTitle').textContent = title;
-        document.getElementById('classModalBody').innerHTML = html;
-        openModal(document.getElementById('classModal'));
-    }
-
-    window.classReport1 = function (className) {
-        const groups = getClassGroups();
-        const list = groups[className] || [];
-        const rows = list.map(s => {
-            const st = studentTrainingStats(s.registerNumber);
-            const det = st.details.map(d => `${d.name} (${d.pct}%${d.completed ? ', ✓' : ''})`).join('; ') || '—';
-            return `<tr>
-                <td>${s.registerNumber}</td><td>${s.name}</td>
-                <td>${st.registered}</td><td>${st.attended}</td><td>${st.notAttended}</td><td>${st.completed}</td>
-                <td style="font-size:0.8rem;color:#475569;">${det}</td>
-            </tr>`;
-        }).join('');
-        openClassModal(`Report 1 — ${className} (Student-wise)`, `
-            <div class="table-responsive"><table class="table">
-                <thead><tr><th>Reg No</th><th>Name</th><th>Registered</th><th>Attended</th><th>Not Attended</th><th>Completed</th><th>Program Details</th></tr></thead>
-                <tbody>${rows || '<tr><td colspan="7" class="text-center text-muted">No students.</td></tr>'}</tbody>
-            </table></div>`);
-    };
-
-    window.classReport2 = function (className) {
-        const groups = getClassGroups();
-        const list = groups[className] || [];
-        const programs = db.getTrainingPrograms();
-        const progOpts = programs.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-        openClassModal(`Report 2 — ${className} (Program-wise)`, `
-            <div class="d-flex gap-2 mb-3" style="flex-wrap:wrap;">
-                <select id="cr2Program" class="form-control" style="max-width:280px;" onchange="renderClassReport2('${className.replace(/'/g, "\\'")}')">
-                    <option value="">Select Program…</option>${progOpts}
-                </select>
-                <select id="cr2Status" class="form-control" style="max-width:200px;" onchange="renderClassReport2('${className.replace(/'/g, "\\'")}')">
-                    <option value="all">All</option>
-                    <option value="registered">Registered only</option>
-                    <option value="notregistered">Not Registered only</option>
-                </select>
-            </div>
-            <div id="cr2Body"><p class="text-muted">Choose a program to see registration status.</p></div>`);
-    };
-
-    window.renderClassReport2 = function (className) {
-        const groups = getClassGroups();
-        const list = groups[className] || [];
-        const pid = document.getElementById('cr2Program').value;
-        const status = document.getElementById('cr2Status').value;
-        const body = document.getElementById('cr2Body');
-        if (!pid) { body.innerHTML = '<p class="text-muted">Choose a program to see registration status.</p>'; return; }
-        const p = db.getTrainingPrograms().find(x => x.id === pid);
-        const reg = list.filter(s => (p.registrations || []).includes(s.registerNumber));
-        const notReg = list.filter(s => !(p.registrations || []).includes(s.registerNumber));
-        let ordered = [];
-        if (status === 'registered') ordered = reg.map(s => ({ s, r: true }));
-        else if (status === 'notregistered') ordered = notReg.map(s => ({ s, r: false }));
-        else ordered = [...reg.map(s => ({ s, r: true })), ...notReg.map(s => ({ s, r: false }))]; // registered first
-        const rows = ordered.map(({ s, r }) => `<tr>
-            <td>${s.registerNumber}</td><td>${s.name}</td>
-            <td>${r ? '<span class="status-pill status-qualified">Registered</span>' : '<span class="status-pill status-dropped">Not Registered</span>'}</td>
-        </tr>`).join('');
-        body.innerHTML = `<div class="table-responsive"><table class="table">
-            <thead><tr><th>Reg No</th><th>Name</th><th>Registration Status</th></tr></thead>
-            <tbody>${rows || '<tr><td colspan="3" class="text-center text-muted">No students.</td></tr>'}</tbody>
-        </table></div>`;
-    };
-
-    // =====================================================================
-    // --- MCQ Exam Engine (admin authoring) ---
-    // =====================================================================
-    const canAuthorExams = (userRole === 'admin' || userRole === 'teacherCoordinator');
-    let editingExamId = null;
-    let activeReportExamId = null;
-
-    function getTargetLabel(target) {
-        if (!target || target.type === 'all') return 'All students';
-        const parts = [];
-        if (target.courses && target.courses.length > 0) {
-            parts.push(`Courses: ${target.courses.join(', ')}`);
-        }
-        if (target.classes && target.classes.length > 0) {
-            parts.push(`Classes: ${target.classes.join(', ')}`);
-        }
-        return parts.join(' | ') || 'All students';
-    }
-
-    window.renderMCQ = function () {
-        const btns = document.getElementById('mcqActionBtns');
-        if (btns) btns.style.display = canAuthorExams ? '' : 'none';
-
-        const exams = db.getExams();
-        const tbody = document.querySelector('#examTable tbody');
-        if (!tbody) return;
-        if (exams.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No exams yet. Click “Create Exam”.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = exams.map(e => {
-            const total = (e.questions || []).reduce((a, q) => a + (Number(q.marks) || 0), 0);
-            return `<tr>
-                <td class="align-middle"><strong>${e.title}</strong></td>
-                <td class="align-middle">${(e.questions || []).length}</td>
-                <td class="align-middle">${total}</td>
-                <td class="align-middle">${e.passMark}%</td>
-                <td class="align-middle">${e.duration ? `${e.duration} min` : 'Untimed'}</td>
-                <td class="align-middle">
-                    ${canAuthorExams ? `
-                        <div class="d-flex gap-2 align-items-center justify-content-start">
-                            <button class="btn btn-secondary btn-sm" style="min-width: 65px;" onclick="editExam('${e.id}')">Edit</button>
-                            <button class="btn btn-danger btn-sm" style="min-width: 65px;" onclick="deleteExam('${e.id}')">Delete</button>
-                            <button class="btn btn-primary btn-sm" style="min-width: 65px;" onclick="viewExamReport('${e.id}')">Report</button>
-                        </div>
-                    ` : '<span class="text-muted small">view only</span>'}
-                </td>
-            </tr>`;
-        }).join('');
-    };
-
-    window.openExamBuilder = function () {
-        if (!canAuthorExams) { alert('Permission denied.'); return; }
-        editingExamId = null;
-        document.getElementById('exTitle').value = '';
-        document.getElementById('exDuration').value = 20;
-        document.getElementById('exPass').value = 40;
-        document.getElementById('exNeg').value = 0;
-        if(document.getElementById('exShuffleQuestions')) document.getElementById('exShuffleQuestions').checked = false;
-        if(document.getElementById('exShuffleOptions')) document.getElementById('exShuffleOptions').checked = false;
-
-        // Populate course and class checkboxes
-        const students = db.getStudents();
-        const courses = [...new Set(students.map(s => s.course).filter(Boolean))].sort();
-        const classes = [...new Set(students.map(s => s.class || s.className).filter(Boolean))].sort();
-
-        const coursesDiv = document.getElementById('exCoursesContainer');
-        coursesDiv.innerHTML = courses.map(c => `
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; font-weight:normal; font-size:0.875rem;">
-                <input type="checkbox" class="ex-course-checkbox" value="${c}"> ${c}
-            </label>
-        `).join('') || '<span class="text-muted small">No courses available</span>';
-
-        const classesDiv = document.getElementById('exClassesContainer');
-        classesDiv.innerHTML = classes.map(cl => `
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; font-weight:normal; font-size:0.875rem;">
-                <input type="checkbox" class="ex-class-checkbox" value="${cl}"> ${cl}
-            </label>
-        `).join('') || '<span class="text-muted small">No classes available</span>';
-
-        document.getElementById('examQuestions').innerHTML = '';
-        addExamQuestion();
-        document.getElementById('examModalTitle').textContent = 'Create MCQ Exam';
-        openModal(document.getElementById('examModal'));
-    };
-
-    window.addExamQuestion = function () {
-        const wrap = document.getElementById('examQuestions');
-        const idx = wrap.children.length;
-        const div = document.createElement('div');
-        div.className = 'glass-card mb-3';
-        div.dataset.q = idx;
-        div.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <strong>Q${idx + 1}</strong>
-                <button class="btn btn-danger btn-sm" onclick="this.closest('[data-q]').remove()">Remove</button>
-            </div>
-            <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:0.75rem;" class="mb-2">
-                <input class="form-control q-text" placeholder="Question text">
-                <select class="form-control q-type" onchange="onQTypeChange(this)">
-                    <option value="single">Single correct</option>
-                    <option value="multiple">Multiple correct</option>
-                    <option value="truefalse">True / False</option>
-                </select>
-                <input class="form-control q-marks" type="number" value="1" min="0" step="0.5" title="Marks">
-            </div>
-            <div class="q-options"></div>
-            <div class="form-group mb-0 mt-2">
-                <input class="form-control q-explanation" placeholder="Explanation (optional)">
-            </div>
-        `;
-        wrap.appendChild(div);
-        renderQOptions(div, 'single');
-    };
-
-    function renderQOptions(div, type) {
-        const box = div.querySelector('.q-options');
-        if (type === 'truefalse') {
-            box.innerHTML = `
-                <label class="d-flex align-items-center gap-2 mb-1"><input type="radio" name="tf_${div.dataset.q}" class="q-correct" value="True" checked> True</label>
-                <label class="d-flex align-items-center gap-2"><input type="radio" name="tf_${div.dataset.q}" class="q-correct" value="False"> False</label>`;
-        } else {
-            const inputType = type === 'multiple' ? 'checkbox' : 'radio';
-            let html = '';
-            for (let i = 0; i < 4; i++) {
-                html += `<div class="d-flex align-items-center gap-2 mb-1">
-                    <input type="${inputType}" name="opt_${div.dataset.q}" class="q-correct" value="${i}">
-                    <input class="form-control q-opt" placeholder="Option ${i + 1}">
-                </div>`;
-            }
-            box.innerHTML = html + '<small class="text-muted">Tick the correct option(s).</small>';
-        }
-    }
-
-    window.onQTypeChange = function (sel) {
-        renderQOptions(sel.closest('[data-q]'), sel.value);
-    };
-
-    window.saveExam = async function () {
-        const title = document.getElementById('exTitle').value.trim();
-        if (!title) { alert('Enter an exam title.'); return; }
-        
-        const questions = [];
-        let hasError = false;
-        let errorMsg = '';
-        
-        const qContainers = document.querySelectorAll('#examQuestions [data-q]');
-        for (let j = 0; j < qContainers.length; j++) {
-            const div = qContainers[j];
-            const text = div.querySelector('.q-text').value.trim();
-            const type = div.querySelector('.q-type').value;
-            const marks = Number(div.querySelector('.q-marks').value) || 1;
-            const explanation = div.querySelector('.q-explanation').value.trim();
-
-            if (!text) {
-                hasError = true;
-                errorMsg = `Question ${j + 1}: Question text cannot be empty.`;
-                break;
-            }
-
-            let options = [];
-            let correct = [];
-
-            if (type === 'truefalse') {
-                options = ['True', 'False'];
-                const c = div.querySelector('.q-correct:checked');
-                if (!c) {
-                    hasError = true;
-                    errorMsg = `Question ${j + 1}: Please select the correct True/False answer.`;
-                    break;
-                }
-                correct = [c.value];
-            } else {
-                const optInputs = div.querySelectorAll('.q-opt');
-                const rawOptions = Array.from(optInputs).map(i => i.value.trim());
-                options = rawOptions.filter(Boolean);
-
-                if (options.length < 2) {
-                    hasError = true;
-                    errorMsg = `Question ${j + 1}: Provide at least 2 options.`;
-                    break;
-                }
-
-                const checked = div.querySelectorAll('.q-correct:checked');
-                if (checked.length === 0) {
-                    hasError = true;
-                    errorMsg = `Question ${j + 1}: Please check at least one correct option.`;
-                    break;
-                }
-
-                checked.forEach(c => {
-                    const i = Number(c.value);
-                    if (rawOptions[i]) {
-                        correct.push(rawOptions[i]);
-                    }
-                });
-
-                if (correct.length === 0) {
-                    hasError = true;
-                    errorMsg = `Question ${j + 1}: Checked correct option(s) must not be empty.`;
-                    break;
-                }
-            }
-
-            questions.push({ text, type, marks, options, correct, explanation });
-        }
-
-        if (hasError) {
-            alert(errorMsg);
-            return;
-        }
-        
-        if (questions.length === 0) { alert('Add at least one complete question.'); return; }
-
-        const selectedCourses = Array.from(document.querySelectorAll('.ex-course-checkbox:checked')).map(cb => cb.value);
-        const selectedClasses = Array.from(document.querySelectorAll('.ex-class-checkbox:checked')).map(cb => cb.value);
-
-        const target = {
-            type: (selectedCourses.length || selectedClasses.length) ? 'custom' : 'all',
-            courses: selectedCourses,
-            classes: selectedClasses
-        };
-
-        const examData = {
-            title,
-            duration: Number(document.getElementById('exDuration').value) || 0,
-            passMark: Number(document.getElementById('exPass').value) || 40,
-            negative: Number(document.getElementById('exNeg').value) || 0,
-            shuffleQuestions: document.getElementById('exShuffleQuestions') ? document.getElementById('exShuffleQuestions').checked : false,
-            shuffleOptions: document.getElementById('exShuffleOptions') ? document.getElementById('exShuffleOptions').checked : false,
-            questions,
-            target
-        };
-
-        let result;
-        if (editingExamId) {
-            result = await db.updateExam(editingExamId, examData);
-            editingExamId = null;
-        } else {
-            result = await db.addExam(examData);
-        }
-
-        if (result.success) {
-            closeModal(document.getElementById('examModal'));
-            renderMCQ();
-        }
-    };
-
-    window.editExam = function (examId) {
-        if (!canAuthorExams) { alert('Permission denied.'); return; }
-        const exam = db.getExams().find(e => e.id === examId);
-        if (!exam) return;
-
-        editingExamId = examId;
-        document.getElementById('exTitle').value = exam.title;
-        document.getElementById('exDuration').value = exam.duration || 0;
-        document.getElementById('exPass').value = exam.passMark || 40;
-        document.getElementById('exNeg').value = exam.negative || 0;
-        if(document.getElementById('exShuffleQuestions')) document.getElementById('exShuffleQuestions').checked = !!exam.shuffleQuestions;
-        if(document.getElementById('exShuffleOptions')) document.getElementById('exShuffleOptions').checked = !!exam.shuffleOptions;
-
-        // Populate Courses and Classes Checkboxes
-        const students = db.getStudents();
-        const courses = [...new Set(students.map(s => s.course).filter(Boolean))].sort();
-        const classes = [...new Set(students.map(s => s.class || s.className).filter(Boolean))].sort();
-
-        const target = exam.target || { type: 'all' };
-
-        const coursesDiv = document.getElementById('exCoursesContainer');
-        coursesDiv.innerHTML = courses.map(c => {
-            const checked = target.courses && target.courses.includes(c) ? 'checked' : '';
-            return `
-                <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; font-weight:normal; font-size:0.875rem;">
-                    <input type="checkbox" class="ex-course-checkbox" value="${c}" ${checked}> ${c}
-                </label>
-            `;
-        }).join('') || '<span class="text-muted small">No courses available</span>';
-
-        const classesDiv = document.getElementById('exClassesContainer');
-        classesDiv.innerHTML = classes.map(cl => {
-            const checked = target.classes && target.classes.includes(cl) ? 'checked' : '';
-            return `
-                <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; font-weight:normal; font-size:0.875rem;">
-                    <input type="checkbox" class="ex-class-checkbox" value="${cl}" ${checked}> ${cl}
-                </label>
-            `;
-        }).join('') || '<span class="text-muted small">No classes available</span>';
-
-        // Clear and rebuild questions
-        const wrap = document.getElementById('examQuestions');
-        wrap.innerHTML = '';
-
-        (exam.questions || []).forEach((q, idx) => {
-            const div = document.createElement('div');
-            div.className = 'glass-card mb-3';
-            div.dataset.q = idx;
-            div.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <strong>Q${idx + 1}</strong>
-                    <button class="btn btn-danger btn-sm" onclick="this.closest('[data-q]').remove()">Remove</button>
-                </div>
-                <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:0.75rem;" class="mb-2">
-                    <input class="form-control q-text" placeholder="Question text" value="${(q.text || '').replace(/"/g, '&quot;')}">
-                    <select class="form-control q-type" onchange="onQTypeChange(this)">
-                        <option value="single" ${q.type === 'single' ? 'selected' : ''}>Single correct</option>
-                        <option value="multiple" ${q.type === 'multiple' ? 'selected' : ''}>Multiple correct</option>
-                        <option value="truefalse" ${q.type === 'truefalse' ? 'selected' : ''}>True / False</option>
-                    </select>
-                    <input class="form-control q-marks" type="number" value="${q.marks || 1}" min="0" step="0.5" title="Marks">
-                </div>
-                <div class="q-options"></div>
-                <div class="form-group mb-0 mt-2">
-                    <input class="form-control q-explanation" placeholder="Explanation (optional)" value="${(q.explanation || '').replace(/"/g, '&quot;')}">
-                </div>
-            `;
-            wrap.appendChild(div);
-            
-            // Render options
-            const box = div.querySelector('.q-options');
-            if (q.type === 'truefalse') {
-                const isTrue = q.correct && q.correct.includes('True');
-                box.innerHTML = `
-                    <label class="d-flex align-items-center gap-2 mb-1"><input type="radio" name="tf_${idx}" class="q-correct" value="True" ${isTrue ? 'checked' : ''}> True</label>
-                    <label class="d-flex align-items-center gap-2"><input type="radio" name="tf_${idx}" class="q-correct" value="False" ${!isTrue ? 'checked' : ''}> False</label>`;
-            } else {
-                const inputType = q.type === 'multiple' ? 'checkbox' : 'radio';
-                let html = '';
-                for (let oIdx = 0; oIdx < 4; oIdx++) {
-                    const optVal = q.options[oIdx] || '';
-                    const isChecked = q.correct && q.correct.includes(optVal) ? 'checked' : '';
-                    html += `<div class="d-flex align-items-center gap-2 mb-1">
-                        <input type="${inputType}" name="opt_${idx}" class="q-correct" value="${oIdx}" ${isChecked}>
-                        <input class="form-control q-opt" placeholder="Option ${oIdx + 1}" value="${optVal.replace(/"/g, '&quot;')}">
-                    </div>`;
-                }
-                box.innerHTML = html + '<small class="text-muted">Tick the correct option(s).</small>';
-            }
-        });
-
-        document.getElementById('examModalTitle').textContent = 'Edit MCQ Exam';
-        openModal(document.getElementById('examModal'));
-    };
-
-    window.deleteExam = async function (id) {
-        if (!canAuthorExams) return;
-        if (confirm('Delete this exam?')) {
-            const res = await db.deleteExam(id);
-            if (res.success) renderMCQ();
-        }
-    };
-
-    window.viewExamReport = function (examId) {
-        activeReportExamId = examId;
-        const exam = db.getExams().find(e => e.id === examId);
-        if (!exam) return;
-
-        document.getElementById('reportExamTitle').textContent = `Report: ${exam.title}`;
-        document.getElementById('examListPanel').classList.add('hidden');
-        document.getElementById('examReportPanel').classList.remove('hidden');
-
-        // Populate course filter
-        const students = db.getStudents();
-        const courses = [...new Set(students.map(s => s.course).filter(Boolean))].sort();
-        const courseFilter = document.getElementById('reportCourseFilter');
-        courseFilter.innerHTML = '<option value="">All Courses</option>' + 
-            courses.map(c => `<option value="${c}">${c}</option>`).join('');
-
-        filterExamReport();
-    };
-
-    window.closeExamReport = function () {
-        document.getElementById('examListPanel').classList.remove('hidden');
-        document.getElementById('examReportPanel').classList.add('hidden');
-        activeReportExamId = null;
-    };
-
-    window.toggleFilter = function(containerId) {
-        // Close others
-        ['searchFilterContainer', 'courseFilterContainer', 'statusFilterContainer'].forEach(id => {
-            if (id !== containerId) {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'none';
-            }
-        });
-        const container = document.getElementById(containerId);
-        if (container) {
-            container.style.display = container.style.display === 'none' ? 'block' : 'none';
-            if (container.style.display === 'block') {
-                const input = container.querySelector('input, select');
-                if (input) input.focus();
-            }
-        }
-    };
-
-    // Close filters when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('th')) {
-            ['searchFilterContainer', 'courseFilterContainer', 'statusFilterContainer'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'none';
-            });
-        }
-    });
-
-    window.filterExamReport = function () {
-        if (!activeReportExamId) return;
-        const exam = db.getExams().find(e => e.id === activeReportExamId);
-        if (!exam) return;
-
-        const students = db.getStudents();
-        const attempts = db.getExamAttempts().filter(a => a.exam_id === activeReportExamId);
-        
-        // Filter targeted students
-        const targetedStudents = students.filter(s => {
-            const t = exam.target || { type: 'all' };
-            if (!t || t.type === 'all') return true;
-            const studentCourse = (s.course || '').trim().toLowerCase();
-            const studentClass = (s.class || '').trim().toLowerCase();
-            const matchesCourse = t.courses && t.courses.length > 0 && t.courses.map(x => x.trim().toLowerCase()).includes(studentCourse);
-            const matchesClass = t.classes && t.classes.length > 0 && t.classes.map(x => x.trim().toLowerCase()).includes(studentClass);
-            if (t.courses && t.courses.length > 0 && t.classes && t.classes.length > 0) {
-                return matchesCourse || matchesClass;
-            } else if (t.courses && t.courses.length > 0) {
-                return matchesCourse;
-            } else if (t.classes && t.classes.length > 0) {
-                return matchesClass;
-            }
-            return true;
-        });
-
-        const courseVal = document.getElementById('reportCourseFilter').value;
-        const statusVal = document.getElementById('reportStatusFilter').value;
-        const searchVal = document.getElementById('reportSearchStudent').value.toLowerCase().trim();
-
-        const totalMarks = (exam.questions || []).reduce((a, q) => a + (Number(q.marks) || 0), 0);
-
-        const tbody = document.querySelector('#examReportTable tbody');
-        tbody.innerHTML = '';
-
-        // KPI Calculations
-        const totalAttempts = attempts.length;
-        const uniqueStudents = new Set(attempts.map(a => a.register_number)).size;
-        const retakes = totalAttempts > uniqueStudents ? totalAttempts - uniqueStudents : 0;
-
-        document.getElementById('kpiTotalAttempts').textContent = totalAttempts;
-        document.getElementById('kpiUniqueStudents').textContent = uniqueStudents;
-        document.getElementById('kpiRetakes').textContent = retakes;
-
-        let deptCounts = {};
-
-        const rows = targetedStudents.map(s => {
-            const attempt = attempts.find(a => a.register_number === s.registerNumber);
-            const done = attempt != null;
-            if (!done) return null; // Only show students who attended
-
-            const score = attempt.score;
-            const passed = attempt.passed;
-            const dateStr = new Date(attempt.submitted_at).toLocaleString();
-
-            let status = passed ? 'Passed' : 'Failed';
-            let statusClass = passed ? 'bg-success text-white' : 'bg-danger text-white';
-
-            // Filters
-            if (courseVal && s.course !== courseVal) return null;
-            if (searchVal && !s.name.toLowerCase().includes(searchVal) && !s.registerNumber.toLowerCase().includes(searchVal)) return null;
-            if (statusVal) {
-                if (statusVal === 'passed' && !passed) return null;
-                if (statusVal === 'failed' && passed) return null;
-            }
-
-            // Track department attendance for chart
-            const dept = s.department || 'Unknown';
-            deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-
-            return `<tr>
-                <td><strong>${s.name}</strong></td>
-                <td>${s.registerNumber}</td>
-                <td>${s.course || '—'}</td>
-                <td>${s.class || '—'}</td>
-                <td><span class="badge ${statusClass}" style="padding:4px 8px; border-radius:6px; font-weight:700;">${status}</span></td>
-                <td>${score} / ${totalMarks}</td>
-                <td>${dateStr}</td>
-            </tr>`;
-        }).filter(Boolean).join('');
-
-        tbody.innerHTML = rows || '<tr><td colspan="7" class="text-center text-muted">No students found matching filters.</td></tr>';
-
-        // Update Chart
-        const ctx = document.getElementById('reportDeptChart');
-        if (window.reportDeptChartInst) {
-            window.reportDeptChartInst.destroy();
-        }
-        
-        if (Object.keys(deptCounts).length > 0) {
-            window.reportDeptChartInst = new Chart(ctx, {
+            if (window.adminActivityChartInst) window.adminActivityChartInst.destroy();
+            window.adminActivityChartInst = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(deptCounts),
+                    labels: labels.length ? labels : ['No Registrations'],
                     datasets: [{
-                        label: 'Students Attended',
-                        data: Object.values(deptCounts),
-                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                        borderColor: 'rgba(37, 99, 235, 1)',
-                        borderWidth: 1,
+                        label: 'Candidates Registered',
+                        data: data.length ? data : [0],
+                        backgroundColor: '#0B1F3A',
                         borderRadius: 4
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                        }
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
         }
-    };
+
+        renderActivityChart();
+
+        // Placed Students Overview Table
+        const tableBody = document.querySelector('#dashboardPlacedTable tbody');
+        if (tableBody) {
+            const placedList = students.filter(s => placedSet.has(s.registerNumber));
+            if (placedList.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No students placed yet.</td></tr>';
+            } else {
+                tableBody.innerHTML = placedList.map(s => `
+                    <tr>
+                        <td><strong>${s.name}</strong></td>
+                        <td>${s.registerNumber}</td>
+                        <td>${s.course}</td>
+                        <td>Campus Recruitment</td>
+                        <td><span class="badge badge-success">Placed</span></td>
+                    </tr>
+                `).join('');
+            }
+        }
+    }
 
     try {
-        handleRouting(false); // Render data now that DB is loaded
-    } catch (error) {
-        console.error("Dashboard routing initialization failed:", error);
+        handleRouting(false);
+    } catch (err) {
+        console.error("Routing error:", err);
     }
 });
