@@ -246,10 +246,21 @@ class Database {
                 this.client.from('central_marian_class_incharges').select('*')
             ]);
 
+            this.cloudAvailable = true;
+
             if (sErr || tErr || pErr || aErr || eErr || attErr) {
-                console.error("Supabase load errors:", { sErr, tErr, pErr, aErr, eErr, attErr });
-                // Do not throw error, just continue with available data
-                console.warn("Some tables failed to load, continuing with available data.");
+                const isAuthError = [sErr, tErr, pErr, aErr, eErr, attErr].some(err => 
+                    err && (err.message?.includes('API key') || err.message?.includes('JWT') || err.code === 'PGRST301' || err.status === 401)
+                );
+
+                if (isAuthError) {
+                    console.warn("[Supabase] Invalid or expired Supabase API key. Falling back to local storage offline mode.");
+                    this.cloudAvailable = false;
+                    this.loadLocalStorageBackup();
+                    return false;
+                }
+
+                console.warn("Some Supabase tables returned warnings, continuing with available data:", { sErr, tErr, pErr, aErr, eErr, attErr });
             }
 
             if (iErr) {
@@ -289,6 +300,7 @@ class Database {
             return true;
         } catch (error) {
             console.error("Supabase load failed, using LocalStorage backup:", error);
+            this.cloudAvailable = false;
             this.loadLocalStorageBackup();
             return false;
         }
@@ -310,7 +322,7 @@ class Database {
     }
 
     async sync(tableName, data) {
-        if (!this.client) {
+        if (!this.client || this.cloudAvailable === false) {
             localStorage.setItem('db_cache', JSON.stringify(this.cache));
             return { success: true, message: 'Saved locally.' };
         }
@@ -344,6 +356,12 @@ class Database {
             }
 
             if (error) {
+                if (error.message?.includes('API key') || error.code === 'PGRST301' || error.status === 401) {
+                    console.warn(`[Supabase Auth] Invalid API key when syncing ${tableName}. Saved changes locally.`);
+                    this.cloudAvailable = false;
+                    localStorage.setItem('db_cache', JSON.stringify(this.cache));
+                    return { success: true, message: 'Saved locally (API key invalid).' };
+                }
                 if (error.code === 'PGRST205' || (error.message && error.message.includes('schema cache'))) {
                     console.warn(`Supabase table missing for ${tableName}, saved locally only.`);
                     localStorage.setItem('db_cache', JSON.stringify(this.cache));
@@ -355,13 +373,18 @@ class Database {
             return { success: true, message: 'Synced with cloud.' };
         } catch (e) {
             console.error(`Sync error for ${tableName}:`, e);
+            if (e.message?.includes('API key')) {
+                this.cloudAvailable = false;
+                localStorage.setItem('db_cache', JSON.stringify(this.cache));
+                return { success: true, message: 'Saved locally.' };
+            }
             showToast(`Sync Error: ${e.message}`, 'error');
             return { success: false, message: e.message };
         }
     }
 
     async deleteRecord(tableName, id) {
-        if (!this.client) {
+        if (!this.client || this.cloudAvailable === false) {
             localStorage.setItem('db_cache', JSON.stringify(this.cache));
             return { success: true };
         }
@@ -389,6 +412,12 @@ class Database {
             }
 
             if (error) {
+                if (error.message?.includes('API key') || error.code === 'PGRST301' || error.status === 401) {
+                    console.warn(`[Supabase Auth] Invalid API key when deleting ${tableName}. Deleted locally.`);
+                    this.cloudAvailable = false;
+                    localStorage.setItem('db_cache', JSON.stringify(this.cache));
+                    return { success: true };
+                }
                 if (error.code === 'PGRST205' || (error.message && error.message.includes('schema cache'))) {
                     console.warn(`Supabase table missing for deleting ${tableName}, deleted locally only.`);
                     localStorage.setItem('db_cache', JSON.stringify(this.cache));
@@ -400,6 +429,11 @@ class Database {
             return { success: true };
         } catch (e) {
             console.error(`Delete error for ${tableName}:`, e);
+            if (e.message?.includes('API key')) {
+                this.cloudAvailable = false;
+                localStorage.setItem('db_cache', JSON.stringify(this.cache));
+                return { success: true };
+            }
             showToast(`Delete Error: ${e.message}`, 'error');
             return { success: false, message: e.message };
         }
