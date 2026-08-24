@@ -6,7 +6,7 @@
 // Replace these placeholders with your actual Supabase Project URL and Anon Key.
 // =====================================================================
 const SUPABASE_URL = 'https://bbvmwwmfzpztlsybluml.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_-4VLIQXXBBC9QsA9IvsNng_IS0GLm3v';
+const SUPABASE_KEY = 'sb_publishable_-4VLIqXXBBC9QsA9IvsNng_IS0GLm3v';
 
 // =====================================================================
 // DATA MAPPING HELPERS (JS camelCase <-> Postgres snake_case)
@@ -215,7 +215,7 @@ class Database {
 
     async init() {
         console.log("Initializing Supabase Database...");
-        
+
         // Check if credentials are set
         if (typeof supabase === 'undefined' || SUPABASE_URL.includes("YOUR_SUPABASE") || SUPABASE_KEY.includes("YOUR_SUPABASE")) {
             console.warn("Supabase client or credentials not configured yet. Falling back to LocalStorage backup.");
@@ -249,7 +249,7 @@ class Database {
             this.cloudAvailable = true;
 
             if (sErr || tErr || pErr || aErr || eErr || attErr) {
-                const isAuthError = [sErr, tErr, pErr, aErr, eErr, attErr].some(err => 
+                const isAuthError = [sErr, tErr, pErr, aErr, eErr, attErr].some(err =>
                     err && (err.message?.includes('API key') || err.message?.includes('JWT') || err.code === 'PGRST301' || err.status === 401)
                 );
 
@@ -270,7 +270,7 @@ class Database {
                     try {
                         const parsed = JSON.parse(localBackup);
                         this.cache.classIncharges = parsed.classIncharges || [];
-                    } catch(e) {
+                    } catch (e) {
                         this.cache.classIncharges = [];
                     }
                 } else {
@@ -294,7 +294,7 @@ class Database {
             }
 
             console.log("Supabase initialization complete.");
-            
+
             // Backup to LocalStorage
             localStorage.setItem('db_cache', JSON.stringify(this.cache));
             return true;
@@ -311,9 +311,9 @@ class Database {
         if (backup) {
             try {
                 this.cache = JSON.parse(backup);
-            } catch(e) {}
+            } catch (e) { }
         }
-        
+
         // If cache is still empty after checking local storage, load sample data
         if (!this.cache || !this.cache.students || this.cache.students.length === 0 || !this.cache.teachers || this.cache.teachers.length === 0) {
             console.log("Cache is empty. Seeding sample data...");
@@ -661,7 +661,7 @@ class Database {
         const phaseIndex = activity.phases.findIndex(p => p.id === phaseId);
         if (phaseIndex === -1) return { success: false, message: 'Phase not found.' };
         const phase = activity.phases[phaseIndex];
-        
+
         let invalidRegNo = null;
         if (phaseIndex > 0) {
             const prevPhase = activity.phases[phaseIndex - 1];
@@ -673,23 +673,23 @@ class Database {
                 }
             }
         }
-        
+
         if (invalidRegNo) {
             const student = this.cache.students.find(s => s.registerNumber === invalidRegNo);
             const name = student ? student.name : invalidRegNo;
             const prevPhaseName = activity.phases[phaseIndex - 1].name;
-            return { 
-                success: false, 
-                message: `Cannot qualify student ${name}: they must clear the previous round (${prevPhaseName}) first.` 
+            return {
+                success: false,
+                message: `Cannot qualify student ${name}: they must clear the previous round (${prevPhaseName}) first.`
             };
         }
-        
+
         phase.completions = regNumbers;
-        
+
         for (let i = phaseIndex + 1; i < activity.phases.length; i++) {
             activity.phases[i].completions = (activity.phases[i].completions || []).filter(x => regNumbers.includes(x));
         }
-        
+
         const res = await this.sync("Activity", activity);
         if (res.success) showToast('Qualifications updated successfully!', 'success');
         return res;
@@ -748,14 +748,14 @@ class Database {
     async addPlacementPhase(activityId, phase) {
         const index = this.cache.placementActivities.findIndex(a => a.id === activityId);
         if (index === -1) return { success: false, message: 'Activity not found.' };
-        
+
         phase.id = 'PHS' + Date.now();
         phase.completions = [];
-        
+
         const activity = this.cache.placementActivities[index];
         activity.phases = activity.phases || [];
         activity.phases.push(phase);
-        
+
         // Optimistic background sync (prevent UI lag)
         this.sync("Activity", activity).then(res => {
             if (res.success) {
@@ -764,7 +764,7 @@ class Database {
                 console.error("Failed to sync phase to cloud");
             }
         });
-        
+
         // Return instantly to close modal and update UI
         return { success: true, message: 'Phase added successfully!' };
     }
@@ -772,13 +772,13 @@ class Database {
     async updatePlacementPhase(activityId, phaseId, updatedData) {
         const actIndex = this.cache.placementActivities.findIndex(a => a.id === activityId);
         if (actIndex === -1) return { success: false, message: 'Activity not found.' };
-        
+
         const activity = this.cache.placementActivities[actIndex];
         const phIndex = activity.phases.findIndex(p => p.id === phaseId);
         if (phIndex === -1) return { success: false, message: 'Phase not found.' };
-        
+
         activity.phases[phIndex] = { ...activity.phases[phIndex], ...updatedData };
-        
+
         const res = await this.sync("Activity", activity);
         if (res.success) showToast('Phase updated successfully!', 'success');
         return res;
@@ -885,7 +885,7 @@ class Database {
     async deleteClass(className) {
         this.cache.classIncharges = this.cache.classIncharges || [];
         this.cache.classIncharges = this.cache.classIncharges.filter(c => c.className !== className);
-        
+
         // Clear class for students assigned to this class
         this.cache.students = this.cache.students || [];
         const affectedStudents = [];
@@ -895,11 +895,11 @@ class Database {
                 affectedStudents.push(s);
             }
         });
-        
+
         if (affectedStudents.length > 0) {
             await this.sync('Students', affectedStudents);
         }
-        
+
         const res = await this.deleteRecord('ClassIncharge', className);
         if (res.success) showToast(`Class "${className}" deleted successfully.`, 'success');
         return res;
@@ -957,7 +957,7 @@ class Database {
         if (phaseIndex === -1) return { success: false, message: 'Phase not found.' };
         const phase = activity.phases[phaseIndex];
         phase.completions = phase.completions || [];
-        
+
         if (isNowComplete) {
             if (phaseIndex > 0) {
                 const prevPhase = activity.phases[phaseIndex - 1];
@@ -975,7 +975,7 @@ class Database {
                 activity.phases[i].completions = (activity.phases[i].completions || []).filter(x => x !== regNo);
             }
         }
-        
+
         const res = await this.sync("Activity", activity);
         if (res.success) showToast('Qualification updated!', 'success');
         return res;
@@ -984,11 +984,11 @@ class Database {
     getStudentAttendance(regNo) {
         const student = this.cache.students.find(s => s.registerNumber === regNo);
         if (!student) return [];
-        
+
         return this.cache.trainingPrograms.map(p => {
             const isRegistered = (p.registrations || []).includes(regNo);
             const myBatch = (p.batches || []).find(b => (b.students || []).includes(regNo));
-            
+
             const studentSessions = (p.sessions || []).filter(s => {
                 if (!s.batchId) return true;
                 return myBatch && s.batchId === myBatch.id;
@@ -1159,7 +1159,7 @@ class Database {
         if (index !== -1) {
             const program = this.cache.trainingPrograms[index];
             program.batches = (program.batches || []).filter(b => b.id !== batchId);
-            
+
             program.sessions = program.sessions || [];
             program.sessions.forEach(s => {
                 if (s.batchId === batchId) delete s.batchId;
@@ -1177,7 +1177,7 @@ class Database {
         if (index !== -1) {
             const program = this.cache.trainingPrograms[index];
             program.batches = program.batches || [];
-            
+
             program.batches.forEach(b => {
                 b.students = (b.students || []).filter(regNo => !studentRegNos.includes(regNo));
             });
@@ -1366,7 +1366,7 @@ class Database {
 }
 
 // Global Toast System
-window.showToast = function(message, type = 'success') {
+window.showToast = function (message, type = 'success') {
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -1380,7 +1380,7 @@ window.showToast = function(message, type = 'success') {
         container.style.gap = '8px';
         document.body.appendChild(container);
     }
-    
+
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
@@ -1389,7 +1389,7 @@ window.showToast = function(message, type = 'success') {
             <span class="toast-msg">${message}</span>
         </div>
     `;
-    
+
     // Toast Styles
     toast.style.background = type === 'success' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
     toast.style.color = '#ffffff';
@@ -1402,15 +1402,15 @@ window.showToast = function(message, type = 'success') {
     toast.style.opacity = '0';
     toast.style.transform = 'translateY(20px)';
     toast.style.transition = 'transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 250ms cubic-bezier(0.2, 0.8, 0.2, 1)';
-    
+
     container.appendChild(toast);
-    
+
     // Force reflow
     toast.offsetHeight;
-    
+
     toast.style.opacity = '1';
     toast.style.transform = 'translateY(0)';
-    
+
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(-20px)';
