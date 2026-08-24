@@ -116,8 +116,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Hide add/create buttons
-        const addTrnBtn = document.getElementById('toggleAddTrainingBtn');
-        if (addTrnBtn) addTrnBtn.style.display = 'none';
         const addPlcBtn = document.getElementById('toggleAddPlacementBtn');
         if (addPlcBtn) addPlcBtn.style.display = 'none';
         const addRecBtn = document.getElementById('toggleAddRecruitmentBtn');
@@ -193,21 +191,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 renderStudents();
                 renderTeachers();
             }
-            if(tabId === 'training') {
-                renderTrainingPrograms();
-            }
-            if(tabId === 'calendar') {
-                initCalendarSelectors();
-                renderCalendar();
-            }
             if(tabId === 'placement') {
                 renderPlacementActivities();
             }
             if(tabId === 'classView') {
                 renderClassView();
             }
-            if(tabId === 'mcq') {
-                renderMCQ();
+            if(tabId === 'calendar') {
+                initCalendarSelectors();
+                renderCalendar();
             }
         } catch (e) {
             console.warn(`Error rendering tab ${tabId}:`, e);
@@ -969,365 +961,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(() => teacherAlert.classList.add('hidden'), 5000);
     }
 
-    // --- Training Management ---
-    const toggleAddTrainingBtn = document.getElementById('toggleAddTrainingBtn');
-    const cancelAddTrainingBtn = document.getElementById('cancelAddTrainingBtn');
-    const trainingModal = document.getElementById('trainingModal');
-    const closeTrainingModalBtn = document.getElementById('closeTrainingModalBtn');
-    const trainingModalTitle = document.getElementById('trainingModalTitle');
-    const saveTrainingBtn = document.getElementById('saveTrainingBtn');
-    const addTrainingForm = document.getElementById('addTrainingForm');
-    const trainingAlert = document.getElementById('trainingAlert');
-    const courseFilterSection = document.getElementById('courseFilterSection');
-    const deptFilterSection = document.getElementById('deptFilterSection');
-    const targetTypeRadios = document.querySelectorAll('input[name="targetType"]');
-
-    if (toggleAddTrainingBtn) {
-        toggleAddTrainingBtn.addEventListener('click', () => {
-            editingProgramId = null;
-            addTrainingForm.reset();
-            document.getElementById('trnDesc').innerHTML = '';
-            trainingModalTitle.textContent = 'Create New Training Program';
-            saveTrainingBtn.textContent = 'Create Program';
-            openModal(trainingModal);
-            populateTrainingFilters();
-        });
-    }
-
-    if (cancelAddTrainingBtn) {
-        cancelAddTrainingBtn.addEventListener('click', () => {
-            trainingModal.classList.add('hidden');
-            addTrainingForm.reset();
-            document.getElementById('trnDesc').innerHTML = '';
-        });
-    }
-
-    if (closeTrainingModalBtn) {
-        closeTrainingModalBtn.addEventListener('click', () => {
-            trainingModal.classList.add('hidden');
-            addTrainingForm.reset();
-            document.getElementById('trnDesc').innerHTML = '';
-        });
-    }
-
-    targetTypeRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            courseFilterSection.classList.add('hidden');
-            deptFilterSection.classList.add('hidden');
-            
-            if (radio.value === 'course') {
-                courseFilterSection.classList.remove('hidden');
-            } else if (radio.value === 'dept') {
-                deptFilterSection.classList.remove('hidden');
-            }
-        });
-    });
-
-    const trnDate = document.getElementById('trnDate');
-    const trnEndDate = document.getElementById('trnEndDate');
-
-    if(trnDate) trnDate.addEventListener('change', () => {});
-    if(trnEndDate) trnEndDate.addEventListener('change', () => {});
-
-    function populateTrainingFilters() {
-        const students = db.getStudents();
-        const courses = [...new Set(students.map(s => s.course))].sort();
-        const depts = [...new Set(students.map(s => s.department))].sort();
-
-        const courseList = document.getElementById('trnCourseList');
-        const deptList = document.getElementById('trnDeptList');
-
-        courseList.innerHTML = courses.map(c => `
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <input type="checkbox" name="targetCourses" value="${c}" id="c_${c.replace(/\s+/g, '_')}">
-                <label for="c_${c.replace(/\s+/g, '_')}" class="small mb-0" style="cursor: pointer;">${c}</label>
-            </div>
-        `).join('') || '<p class="text-muted small">No courses found</p>';
-
-        deptList.innerHTML = depts.map(d => `
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <input type="checkbox" name="targetDepts" value="${d}" id="d_${d.replace(/\s+/g, '_')}">
-                <label for="d_${d.replace(/\s+/g, '_')}" class="small mb-0" style="cursor: pointer;">${d}</label>
-            </div>
-        `).join('') || '<p class="text-muted small">No departments found</p>';
-    }
-
-    if (addTrainingForm) {
-        addTrainingForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            if (submitBtn) submitBtn.disabled = true;
-            try {
-                const targetType = document.querySelector('input[name="targetType"]:checked').value;
-                const selectedCourses = Array.from(document.querySelectorAll('input[name="targetCourses"]:checked')).map(cb => cb.value);
-                const selectedDepts = Array.from(document.querySelectorAll('input[name="targetDepts"]:checked')).map(cb => cb.value);
-
-                const program = {
-                    name: document.getElementById('trnName').value.trim(),
-                    venue: document.getElementById('trnVenue').value.trim(),
-                    date: document.getElementById('trnDate').value,
-                    description: document.getElementById('trnDesc').innerHTML.trim(),
-                    target: {
-                        type: targetType,
-                        courses: targetType === 'course' ? selectedCourses : [],
-                        depts: targetType === 'dept' ? selectedDepts : []
-                    },
-                    endDate: document.getElementById('trnEndDate').value
-                };
-
-                let result;
-                if (editingProgramId) {
-                    result = await db.updateTrainingProgram(editingProgramId, program);
-                    showTrainingAlert(result.message, result.success ? 'success' : 'danger');
-                    if (result.success) editingProgramId = null;
-                } else {
-                    result = await db.addTrainingProgram(program);
-                    showTrainingAlert(result.message, result.success ? 'success' : 'danger');
-                }
-                
-                if (result.success) {
-                    addTrainingForm.reset();
-                    document.getElementById('trnDesc').innerHTML = '';
-                    closeModal(trainingModal);
-                    renderTrainingPrograms();
-                }
-            } finally {
-                if (submitBtn) submitBtn.disabled = false;
-            }
-        });
-    }
-
-    function renderTrainingPrograms() {
-        const programs = db.getTrainingPrograms();
-        const tbody = document.querySelector('#trainingTable tbody');
-        if(!tbody) return;
-        tbody.innerHTML = '';
-
-        if (programs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No programs found.</td></tr>';
-            return;
-        }
-
-        programs.forEach(p => {
-            const tr = document.createElement('tr');
-            const st = programAttendanceStats(p);
-            tr.innerHTML = `
-                <td style="min-width:180px;"><strong>${p.name}</strong></td>
-                <td style="white-space:nowrap;">${p.date}${p.endDate && p.endDate !== p.date ? '<br>to ' + p.endDate : ''}</td>
-                <td>
-                    <small class="${p.isRegistrationOpen ? 'text-success' : 'text-danger'}">${p.isRegistrationOpen ? 'Registration Open' : 'Registration Closed'}</small><br>
-                    <small class="${p.isFeedbackOpen ? 'text-success' : 'text-danger'}">${p.isFeedbackOpen ? '💬 Feedback Enabled' : '💬 Feedback Disabled'}</small>
-                </td>
-                <td class="text-center"><strong style="font-size:1rem;">${st.registered}</strong></td>
-                <td class="text-center"><span style="color:#16a34a;font-weight:700;">${st.attended}</span></td>
-                <td class="text-center"><span style="color:#dc2626;font-weight:700;">${st.notAttended}</span></td>
-                <td class="text-center"><span style="color:#0891b2;font-weight:700;">${st.completed}</span></td>
-                <td style="white-space:nowrap; width:1%;">
-                    <div class="d-flex gap-1">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="window.location.href='manage-training.html?id=${p.id}'" title="Manage">Manage</button>
-                        ${Permissions.can(userRole, 'edit_training_drives') ? `
-                        <button class="btn btn-secondary btn-sm" onclick="editTrainingProgram('${p.id}')" title="Edit">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="toggleTrnReg('${p.id}')" title="Registration">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="${p.isRegistrationOpen ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z'}"/></svg>
-                        </button>
-                        <button class="btn ${p.isFeedbackOpen ? 'btn-success' : 'btn-secondary'} btn-sm" onclick="toggleFeedback('${p.id}')" title="Feedback">
-                            💬
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteTrainingProgram('${p.id}')" title="Delete">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        </button>
-                        ` : ''}
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    let editingProgramId = null;
-    window.editTrainingProgram = (id) => {
-        const programs = db.getTrainingPrograms();
-        const p = programs.find(program => program.id === id);
-        if(p) {
-            editingProgramId = id;
-            document.getElementById('trnName').value = p.name;
-            document.getElementById('trnVenue').value = p.venue;
-            document.getElementById('trnDate').value = p.date;
-            document.getElementById('trnEndDate').value = p.endDate || '';
-            document.getElementById('trnDesc').innerHTML = p.description || '';
-            
-            // Set Target Audience
-            const radios = document.querySelectorAll('input[name="targetType"]');
-            radios.forEach(r => {
-                if(r.value === p.target.type) r.checked = true;
-            });
-            if(p.target.type === 'course') {
-                courseFilterSection.classList.remove('hidden');
-                deptFilterSection.classList.add('hidden');
-                populateTrainingFilters();
-                setTimeout(() => {
-                    (p.target.courses || []).forEach(c => {
-                        const cb = document.querySelector(`input[name="targetCourses"][value="${c}"]`);
-                        if(cb) cb.checked = true;
-                    });
-                }, 100);
-            } else if(p.target.type === 'dept') {
-                deptFilterSection.classList.remove('hidden');
-                courseFilterSection.classList.add('hidden');
-                populateTrainingFilters();
-                setTimeout(() => {
-                    (p.target.depts || []).forEach(d => {
-                        const cb = document.querySelector(`input[name="targetDepts"][value="${d}"]`);
-                        if(cb) cb.checked = true;
-                    });
-                }, 100);
-            } else {
-                courseFilterSection.classList.add('hidden');
-                deptFilterSection.classList.add('hidden');
-            }
-
-            openModal(trainingModal);
-            trainingModalTitle.textContent = 'Edit Training Program';
-            saveTrainingBtn.textContent = 'Update Program';
-        }
-    };
-
-
-
-    window.toggleTrnReg = async (id) => {
-        const result = await db.toggleRegistration(id);
-        if (result.success) {
-            showTrainingAlert(result.message, 'success');
-            renderTrainingPrograms();
-        } else {
-            showTrainingAlert(result.message || 'Error toggling registration', 'danger');
-        }
-    };
-
-    window.toggleFeedback = async (id) => {
-        const result = await db.toggleFeedback(id);
-        if (result.success) {
-            showTrainingAlert(result.message, 'success');
-            renderTrainingPrograms();
-        } else {
-            showTrainingAlert(result.message || 'Error toggling feedback', 'danger');
-        }
-    };
-
-    window.deleteTrainingProgram = async (id) => {
-        if (confirm('Are you sure you want to delete this training program? This will also remove all its sessions and attendance records.')) {
-            const result = await db.deleteTrainingProgram(id);
-            if (result.success) {
-                showTrainingAlert(result.message || 'Program deleted successfully.', 'success');
-                renderTrainingPrograms();
-            } else {
-                showTrainingAlert(result.message || 'Error deleting program.', 'danger');
-            }
-        }
-    };
-
-    window.clearAllTrainingPrograms = async () => {
-        if (confirm('WARNING: Are you sure you want to delete ALL training programs? This action cannot be undone.')) {
-            const result = await db.clearAllTrainingPrograms();
-            if (result.success) {
-                showTrainingAlert(result.message || 'All programs deleted.', 'success');
-                renderTrainingPrograms();
-            } else {
-                showTrainingAlert(result.message || 'Error deleting programs.', 'danger');
-            }
-        }
-    };
-
-    window.manageAttendance = (id) => {
-        const programs = db.getTrainingPrograms();
-        const p = programs.find(program => program.id === id);
-        if(!p) return;
-
-        const section = document.getElementById('attendanceSection');
-        section.classList.remove('hidden');
-        document.getElementById('attendanceTitle').textContent = `Manage: ${p.name}`;
-        
-        // Populate Day Select
-        const daySelect = document.getElementById('attnDay');
-        daySelect.innerHTML = '';
-        for(let i=1; i<=p.days; i++) {
-            daySelect.innerHTML += `<option value="day${i}">Day ${i}</option>`;
-        }
-
-        // Show registrations
-        const regContainer = document.getElementById('registrationsContainer');
-        if (p.registrations.length === 0) {
-            regContainer.innerHTML = '<p class="text-muted">No students registered yet.</p>';
-        } else {
-            const students = db.getStudents();
-            const regStudents = students.filter(s => p.registrations.includes(s.registerNumber));
-            
-            let tableHtml = '<table class="table table-sm"><thead><tr><th>Reg No</th><th>Name</th><th>Dept</th></tr></thead><tbody>';
-            regStudents.forEach(s => {
-                tableHtml += `<tr><td>${s.registerNumber}</td><td>${s.name}</td><td>${s.department}</td></tr>`;
-            });
-            tableHtml += '</tbody></table>';
-            regContainer.innerHTML = tableHtml;
-        }
-
-        // Store active program ID for upload
-        section.dataset.activeProgramId = id;
-    };
-
-    const uploadAttnBtn = document.getElementById('uploadAttnBtn');
-    if (uploadAttnBtn) {
-        uploadAttnBtn.addEventListener('click', () => {
-            const programId = document.getElementById('attendanceSection').dataset.activeProgramId;
-            const day = document.getElementById('attnDay').value;
-            const session = document.getElementById('attnSession').value;
-            const file = document.getElementById('attnExcelFile').files[0];
-
-            if (!file) {
-                alert('Please select an attendance Excel file.');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                    
-                    // Expecting a column 'Register Number'
-                    const regNumbers = jsonData.map(row => String(row['Register Number'] || row['Reg No'] || '').trim()).filter(r => r);
-                    
-                    if (regNumbers.length === 0) {
-                        alert('No register numbers found in Excel. Column header should be "Register Number" or "Reg No".');
-                        return;
-                    }
-
-                    const result = await db.updateAttendance(programId, day, session, regNumbers);
-                    if (result.success) {
-                        alert(`Attendance for ${day} ${session} uploaded: ${regNumbers.length} students.`);
-                        document.getElementById('attnExcelFile').value = '';
-                    } else {
-                        alert(result.message || 'Error uploading attendance.');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('Error processing file.');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
-    function showTrainingAlert(message, type) {
-        trainingAlert.textContent = message;
-        trainingAlert.className = `alert alert-${type} mb-3`;
-        trainingAlert.classList.remove('hidden');
-        setTimeout(() => trainingAlert.classList.add('hidden'), 5000);
-    }
-
+    // --- Placement & Program Calendar ---
     function showPlacementAlert(message, type) {
         if (!placementAlert) return;
         placementAlert.textContent = message;
@@ -1335,6 +969,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         placementAlert.classList.remove('hidden');
         setTimeout(() => placementAlert.classList.add('hidden'), 5000);
     }
+
     const premiumColors = ['#0D6EFC', '#10b981', '#6366f1', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f43f5e', '#f97316', '#06b6d4'];
     function getProgramColor(id) {
         if (!id) return premiumColors[0];
@@ -1347,16 +982,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderCalendar() {
         const container = document.getElementById('calendarContainer');
-        const programs = db.getTrainingPrograms();
+        if (!container) return;
+        const activities = db.getPlacementActivities();
         
         const monthSel = document.getElementById('calMonth');
         const yearSel = document.getElementById('calYear');
         
-        const currentMonth = monthSel.value ? parseInt(monthSel.value) : new Date().getMonth();
-        const currentYear = yearSel.value ? parseInt(yearSel.value) : new Date().getFullYear();
+        const currentMonth = monthSel && monthSel.value ? parseInt(monthSel.value) : new Date().getMonth();
+        const currentYear = yearSel && yearSel.value ? parseInt(yearSel.value) : new Date().getFullYear();
 
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        
         let html = `
             <div class="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e5e7eb; border: 1px solid #e5e7eb;">
                 <div class="cal-day-head" style="background: #f9fafb; padding: 10px; text-align: center; font-weight: 600; font-size: 0.8rem;">Sun</div>
@@ -1380,19 +1014,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         for (let day = 1; day <= daysInMonth; day++) {
             const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             
-            // Get Training Programs for this day
-            const dayPrograms = programs.filter(p => {
-                const start = p.date;
-                const end = p.endDate || p.date;
-                return dateStr >= start && dateStr <= end;
+            // Get Placement Activities for this day
+            const dayActivities = activities.filter(a => {
+                const actDate = a.date || (a.created_at ? a.created_at.split('T')[0] : '');
+                return actDate === dateStr;
             });
 
             html += `
                 <div style="background: #fff; min-height: 100px; padding: 8px; border: 0.5px solid #f3f4f6; cursor: pointer; transition: background 0.2s;" onclick="viewDateEvents('${dateStr}')" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='#fff'">
                     <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 8px;">${day}</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                        ${dayPrograms.map(p => `
-                            <div style="width: 14px; height: 14px; background: ${getProgramColor(p.id)}; border-radius: 4px;" title="Program: ${p.name}"></div>
+                        ${dayActivities.map(a => `
+                            <div style="width: 14px; height: 14px; background: ${getProgramColor(a.id)}; border-radius: 4px;" title="Activity: ${a.name || a.company}"></div>
                         `).join('')}
                     </div>
                 </div>
@@ -1410,27 +1043,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const dateObj = new Date(dateStr);
         const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-        header.textContent = `Programs on ${formattedDate}`;
+        header.textContent = `Activities on ${formattedDate}`;
 
-        const programs = db.getTrainingPrograms();
-        const dayPrograms = programs.filter(p => {
-            const start = p.date;
-            const end = p.endDate || p.date;
-            return dateStr >= start && dateStr <= end;
+        const activities = db.getPlacementActivities();
+        const dayActivities = activities.filter(a => {
+            const actDate = a.date || (a.created_at ? a.created_at.split('T')[0] : '');
+            return actDate === dateStr;
         });
 
-        if (dayPrograms.length === 0) {
-            list.innerHTML = `<p class="text-muted small">No programs scheduled for this day.</p>`;
+        if (dayActivities.length === 0) {
+            list.innerHTML = `<p class="text-muted small">No activities scheduled for this day.</p>`;
         } else {
             let html = '';
-            dayPrograms.forEach(p => {
-                const color = getProgramColor(p.id);
+            dayActivities.forEach(a => {
+                const color = getProgramColor(a.id);
+                const isRec = (a.type || 'placement') === 'recruitment';
                 html += `
                     <div style="background: #fff; border-left: 4px solid ${color}; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <div style="font-size: 0.75rem; font-weight: 600; color: ${color}; text-transform: uppercase; margin-bottom: 4px;">Program</div>
-                        <h5 style="margin: 0 0 4px 0; font-size: 1rem; color: #111827;">${p.name}</h5>
-                        ${p.description ? `<div style="margin: 0 0 8px 0; font-size: 0.85rem; color: #4b5563; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.description}</div>` : ''}
-                        <button class="btn btn-sm mt-2" style="border: 1px solid ${color}; color: ${color}; background: transparent;" onclick="window.location.href='manage-training.html?id=${p.id}'">View Program</button>
+                        <div style="font-size: 0.75rem; font-weight: 600; color: ${color}; text-transform: uppercase; margin-bottom: 4px;">${isRec ? 'Recruitment Drive' : 'Placement Activity'}</div>
+                        <h5 style="margin: 0 0 4px 0; font-size: 1rem; color: #111827;">${a.name || a.company || 'Placement Event'}</h5>
+                        ${a.description ? `<div style="margin: 0 0 8px 0; font-size: 0.85rem; color: #4b5563; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${a.description}</div>` : ''}
+                        <button class="btn btn-sm mt-2" style="border: 1px solid ${color}; color: ${color}; background: transparent;" onclick="activateTab('placement'); openManageSubView('${a.id}')">View Details</button>
                     </div>
                 `;
             });
@@ -1794,15 +1427,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!document.getElementById('dashTotalStudents')) return;
 
         const students = db.getStudents() || [];
-        const programs = db.getTrainingPrograms() || [];
         const activities = db.getPlacementActivities() || [];
         
         const placementActivities = activities.filter(a => a.type === 'placement' || !a.type);
         const recruitmentActivities = activities.filter(a => a.type === 'recruitment');
 
-        // Top 4 Metrics (animated count-up)
+        // Top Metrics (animated count-up)
         window.animateCount('dashTotalStudents', students.length);
-        window.animateCount('dashTotalTrainings', programs.length);
         window.animateCount('dashTotalActivities', placementActivities.length);
         window.animateCount('dashTotalRecruitments', recruitmentActivities.length);
 
@@ -2077,64 +1708,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 labels: ['Placed Students', 'In Process', 'Unplaced'],
                 datasets: [{
                     data: [placedCount, inProcessCount, unplacedCount],
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
-                    borderWidth: 6,
-                    borderColor: '#ffffff',
-                    cutout: '80%',
-                    borderRadius: 20
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: true },
-                    datalabels: { display: false }
-                }
-            }
-        });
-
-        // Training Status Logic
-        let completedTrainingSet = new Set();
-        let attendingTrainingSet = new Set();
-
-        programs.forEach(p => {
-            const sessionCount = (p.sessions || []).length;
-            if (sessionCount === 0) return;
-
-            const studentAttendance = {};
-            p.sessions.forEach(s => {
-                (s.attendance || []).forEach(reg => {
-                    studentAttendance[reg] = (studentAttendance[reg] || 0) + 1;
-                    attendingTrainingSet.add(reg);
-                });
-            });
-
-            Object.entries(studentAttendance).forEach(([reg, count]) => {
-                if (count === sessionCount) {
-                    completedTrainingSet.add(reg);
-                }
-            });
-        });
-
-        completedTrainingSet.forEach(reg => attendingTrainingSet.delete(reg));
-        const completedTrainCount = completedTrainingSet.size;
-        const attendingTrainCount = attendingTrainingSet.size;
-        const notAttendingCount = Math.max(0, totalStudents - completedTrainCount - attendingTrainCount);
-
-        document.getElementById('dashTrainingTotalText').textContent = `Total: ${totalStudents}`;
-        const trainingPercent = totalStudents > 0 ? Math.round((completedTrainCount / totalStudents) * 100) : 0;
-        document.getElementById('trainingPercentText').textContent = `${trainingPercent}%`;
-
-        const tCtx = document.getElementById('trainingStatusChart');
-        if (window.trainingChartInst) window.trainingChartInst.destroy();
-        window.trainingChartInst = new Chart(tCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Attending Trainings', 'Completed Trainings', 'Not Attending'],
-                datasets: [{
-                    data: [attendingTrainCount, completedTrainCount, notAttendingCount],
                     backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
                     borderWidth: 6,
                     borderColor: '#ffffff',
@@ -2801,530 +2374,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             <thead><tr><th>Reg No</th><th>Name</th><th>Registration Status</th></tr></thead>
             <tbody>${rows || '<tr><td colspan="3" class="text-center text-muted">No students.</td></tr>'}</tbody>
         </table></div>`;
-    };
-
-    // =====================================================================
-    // --- MCQ Exam Engine (admin authoring) ---
-    // =====================================================================
-    const canAuthorExams = (userRole === 'admin' || userRole === 'teacherCoordinator');
-    let editingExamId = null;
-    let activeReportExamId = null;
-
-    function getTargetLabel(target) {
-        if (!target || target.type === 'all') return 'All students';
-        const parts = [];
-        if (target.courses && target.courses.length > 0) {
-            parts.push(`Courses: ${target.courses.join(', ')}`);
-        }
-        if (target.classes && target.classes.length > 0) {
-            parts.push(`Classes: ${target.classes.join(', ')}`);
-        }
-        return parts.join(' | ') || 'All students';
-    }
-
-    window.renderMCQ = function () {
-        const btns = document.getElementById('mcqActionBtns');
-        if (btns) btns.style.display = canAuthorExams ? '' : 'none';
-
-        const exams = db.getExams();
-        const tbody = document.querySelector('#examTable tbody');
-        if (!tbody) return;
-        if (exams.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No exams yet. Click “Create Exam”.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = exams.map(e => {
-            const total = (e.questions || []).reduce((a, q) => a + (Number(q.marks) || 0), 0);
-            return `<tr>
-                <td class="align-middle"><strong>${e.title}</strong></td>
-                <td class="align-middle">${(e.questions || []).length}</td>
-                <td class="align-middle">${total}</td>
-                <td class="align-middle">${e.passMark}%</td>
-                <td class="align-middle">${e.duration ? `${e.duration} min` : 'Untimed'}</td>
-                <td class="align-middle">
-                    ${canAuthorExams ? `
-                        <div class="d-flex gap-2 align-items-center justify-content-start">
-                            <button class="btn btn-secondary btn-sm" style="min-width: 65px;" onclick="editExam('${e.id}')">Edit</button>
-                            <button class="btn btn-danger btn-sm" style="min-width: 65px;" onclick="deleteExam('${e.id}')">Delete</button>
-                            <button class="btn btn-primary btn-sm" style="min-width: 65px;" onclick="viewExamReport('${e.id}')">Report</button>
-                        </div>
-                    ` : '<span class="text-muted small">view only</span>'}
-                </td>
-            </tr>`;
-        }).join('');
-    };
-
-    window.openExamBuilder = function () {
-        if (!canAuthorExams) { alert('Permission denied.'); return; }
-        editingExamId = null;
-        document.getElementById('exTitle').value = '';
-        document.getElementById('exDuration').value = 20;
-        document.getElementById('exPass').value = 40;
-        document.getElementById('exNeg').value = 0;
-        if(document.getElementById('exShuffleQuestions')) document.getElementById('exShuffleQuestions').checked = false;
-        if(document.getElementById('exShuffleOptions')) document.getElementById('exShuffleOptions').checked = false;
-
-        // Populate course and class checkboxes
-        const students = db.getStudents();
-        const courses = [...new Set(students.map(s => s.course).filter(Boolean))].sort();
-        const classes = [...new Set(students.map(s => s.class || s.className).filter(Boolean))].sort();
-
-        const coursesDiv = document.getElementById('exCoursesContainer');
-        coursesDiv.innerHTML = courses.map(c => `
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; font-weight:normal; font-size:0.875rem;">
-                <input type="checkbox" class="ex-course-checkbox" value="${c}"> ${c}
-            </label>
-        `).join('') || '<span class="text-muted small">No courses available</span>';
-
-        const classesDiv = document.getElementById('exClassesContainer');
-        classesDiv.innerHTML = classes.map(cl => `
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; font-weight:normal; font-size:0.875rem;">
-                <input type="checkbox" class="ex-class-checkbox" value="${cl}"> ${cl}
-            </label>
-        `).join('') || '<span class="text-muted small">No classes available</span>';
-
-        document.getElementById('examQuestions').innerHTML = '';
-        addExamQuestion();
-        document.getElementById('examModalTitle').textContent = 'Create MCQ Exam';
-        openModal(document.getElementById('examModal'));
-    };
-
-    window.addExamQuestion = function () {
-        const wrap = document.getElementById('examQuestions');
-        const idx = wrap.children.length;
-        const div = document.createElement('div');
-        div.className = 'glass-card mb-3';
-        div.dataset.q = idx;
-        div.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <strong>Q${idx + 1}</strong>
-                <button class="btn btn-danger btn-sm" onclick="this.closest('[data-q]').remove()">Remove</button>
-            </div>
-            <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:0.75rem;" class="mb-2">
-                <input class="form-control q-text" placeholder="Question text">
-                <select class="form-control q-type" onchange="onQTypeChange(this)">
-                    <option value="single">Single correct</option>
-                    <option value="multiple">Multiple correct</option>
-                    <option value="truefalse">True / False</option>
-                </select>
-                <input class="form-control q-marks" type="number" value="1" min="0" step="0.5" title="Marks">
-            </div>
-            <div class="q-options"></div>
-            <div class="form-group mb-0 mt-2">
-                <input class="form-control q-explanation" placeholder="Explanation (optional)">
-            </div>
-        `;
-        wrap.appendChild(div);
-        renderQOptions(div, 'single');
-    };
-
-    function renderQOptions(div, type) {
-        const box = div.querySelector('.q-options');
-        if (type === 'truefalse') {
-            box.innerHTML = `
-                <label class="d-flex align-items-center gap-2 mb-1"><input type="radio" name="tf_${div.dataset.q}" class="q-correct" value="True" checked> True</label>
-                <label class="d-flex align-items-center gap-2"><input type="radio" name="tf_${div.dataset.q}" class="q-correct" value="False"> False</label>`;
-        } else {
-            const inputType = type === 'multiple' ? 'checkbox' : 'radio';
-            let html = '';
-            for (let i = 0; i < 4; i++) {
-                html += `<div class="d-flex align-items-center gap-2 mb-1">
-                    <input type="${inputType}" name="opt_${div.dataset.q}" class="q-correct" value="${i}">
-                    <input class="form-control q-opt" placeholder="Option ${i + 1}">
-                </div>`;
-            }
-            box.innerHTML = html + '<small class="text-muted">Tick the correct option(s).</small>';
-        }
-    }
-
-    window.onQTypeChange = function (sel) {
-        renderQOptions(sel.closest('[data-q]'), sel.value);
-    };
-
-    window.saveExam = async function () {
-        const title = document.getElementById('exTitle').value.trim();
-        if (!title) { alert('Enter an exam title.'); return; }
-        
-        const questions = [];
-        let hasError = false;
-        let errorMsg = '';
-        
-        const qContainers = document.querySelectorAll('#examQuestions [data-q]');
-        for (let j = 0; j < qContainers.length; j++) {
-            const div = qContainers[j];
-            const text = div.querySelector('.q-text').value.trim();
-            const type = div.querySelector('.q-type').value;
-            const marks = Number(div.querySelector('.q-marks').value) || 1;
-            const explanation = div.querySelector('.q-explanation').value.trim();
-
-            if (!text) {
-                hasError = true;
-                errorMsg = `Question ${j + 1}: Question text cannot be empty.`;
-                break;
-            }
-
-            let options = [];
-            let correct = [];
-
-            if (type === 'truefalse') {
-                options = ['True', 'False'];
-                const c = div.querySelector('.q-correct:checked');
-                if (!c) {
-                    hasError = true;
-                    errorMsg = `Question ${j + 1}: Please select the correct True/False answer.`;
-                    break;
-                }
-                correct = [c.value];
-            } else {
-                const optInputs = div.querySelectorAll('.q-opt');
-                const rawOptions = Array.from(optInputs).map(i => i.value.trim());
-                options = rawOptions.filter(Boolean);
-
-                if (options.length < 2) {
-                    hasError = true;
-                    errorMsg = `Question ${j + 1}: Provide at least 2 options.`;
-                    break;
-                }
-
-                const checked = div.querySelectorAll('.q-correct:checked');
-                if (checked.length === 0) {
-                    hasError = true;
-                    errorMsg = `Question ${j + 1}: Please check at least one correct option.`;
-                    break;
-                }
-
-                checked.forEach(c => {
-                    const i = Number(c.value);
-                    if (rawOptions[i]) {
-                        correct.push(rawOptions[i]);
-                    }
-                });
-
-                if (correct.length === 0) {
-                    hasError = true;
-                    errorMsg = `Question ${j + 1}: Checked correct option(s) must not be empty.`;
-                    break;
-                }
-            }
-
-            questions.push({ text, type, marks, options, correct, explanation });
-        }
-
-        if (hasError) {
-            alert(errorMsg);
-            return;
-        }
-        
-        if (questions.length === 0) { alert('Add at least one complete question.'); return; }
-
-        const selectedCourses = Array.from(document.querySelectorAll('.ex-course-checkbox:checked')).map(cb => cb.value);
-        const selectedClasses = Array.from(document.querySelectorAll('.ex-class-checkbox:checked')).map(cb => cb.value);
-
-        const target = {
-            type: (selectedCourses.length || selectedClasses.length) ? 'custom' : 'all',
-            courses: selectedCourses,
-            classes: selectedClasses
-        };
-
-        const examData = {
-            title,
-            duration: Number(document.getElementById('exDuration').value) || 0,
-            passMark: Number(document.getElementById('exPass').value) || 40,
-            negative: Number(document.getElementById('exNeg').value) || 0,
-            shuffleQuestions: document.getElementById('exShuffleQuestions') ? document.getElementById('exShuffleQuestions').checked : false,
-            shuffleOptions: document.getElementById('exShuffleOptions') ? document.getElementById('exShuffleOptions').checked : false,
-            questions,
-            target
-        };
-
-        let result;
-        if (editingExamId) {
-            result = await db.updateExam(editingExamId, examData);
-            editingExamId = null;
-        } else {
-            result = await db.addExam(examData);
-        }
-
-        if (result.success) {
-            closeModal(document.getElementById('examModal'));
-            renderMCQ();
-        }
-    };
-
-    window.editExam = function (examId) {
-        if (!canAuthorExams) { alert('Permission denied.'); return; }
-        const exam = db.getExams().find(e => e.id === examId);
-        if (!exam) return;
-
-        editingExamId = examId;
-        document.getElementById('exTitle').value = exam.title;
-        document.getElementById('exDuration').value = exam.duration || 0;
-        document.getElementById('exPass').value = exam.passMark || 40;
-        document.getElementById('exNeg').value = exam.negative || 0;
-        if(document.getElementById('exShuffleQuestions')) document.getElementById('exShuffleQuestions').checked = !!exam.shuffleQuestions;
-        if(document.getElementById('exShuffleOptions')) document.getElementById('exShuffleOptions').checked = !!exam.shuffleOptions;
-
-        // Populate Courses and Classes Checkboxes
-        const students = db.getStudents();
-        const courses = [...new Set(students.map(s => s.course).filter(Boolean))].sort();
-        const classes = [...new Set(students.map(s => s.class || s.className).filter(Boolean))].sort();
-
-        const target = exam.target || { type: 'all' };
-
-        const coursesDiv = document.getElementById('exCoursesContainer');
-        coursesDiv.innerHTML = courses.map(c => {
-            const checked = target.courses && target.courses.includes(c) ? 'checked' : '';
-            return `
-                <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; font-weight:normal; font-size:0.875rem;">
-                    <input type="checkbox" class="ex-course-checkbox" value="${c}" ${checked}> ${c}
-                </label>
-            `;
-        }).join('') || '<span class="text-muted small">No courses available</span>';
-
-        const classesDiv = document.getElementById('exClassesContainer');
-        classesDiv.innerHTML = classes.map(cl => {
-            const checked = target.classes && target.classes.includes(cl) ? 'checked' : '';
-            return `
-                <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; font-weight:normal; font-size:0.875rem;">
-                    <input type="checkbox" class="ex-class-checkbox" value="${cl}" ${checked}> ${cl}
-                </label>
-            `;
-        }).join('') || '<span class="text-muted small">No classes available</span>';
-
-        // Clear and rebuild questions
-        const wrap = document.getElementById('examQuestions');
-        wrap.innerHTML = '';
-
-        (exam.questions || []).forEach((q, idx) => {
-            const div = document.createElement('div');
-            div.className = 'glass-card mb-3';
-            div.dataset.q = idx;
-            div.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <strong>Q${idx + 1}</strong>
-                    <button class="btn btn-danger btn-sm" onclick="this.closest('[data-q]').remove()">Remove</button>
-                </div>
-                <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:0.75rem;" class="mb-2">
-                    <input class="form-control q-text" placeholder="Question text" value="${(q.text || '').replace(/"/g, '&quot;')}">
-                    <select class="form-control q-type" onchange="onQTypeChange(this)">
-                        <option value="single" ${q.type === 'single' ? 'selected' : ''}>Single correct</option>
-                        <option value="multiple" ${q.type === 'multiple' ? 'selected' : ''}>Multiple correct</option>
-                        <option value="truefalse" ${q.type === 'truefalse' ? 'selected' : ''}>True / False</option>
-                    </select>
-                    <input class="form-control q-marks" type="number" value="${q.marks || 1}" min="0" step="0.5" title="Marks">
-                </div>
-                <div class="q-options"></div>
-                <div class="form-group mb-0 mt-2">
-                    <input class="form-control q-explanation" placeholder="Explanation (optional)" value="${(q.explanation || '').replace(/"/g, '&quot;')}">
-                </div>
-            `;
-            wrap.appendChild(div);
-            
-            // Render options
-            const box = div.querySelector('.q-options');
-            if (q.type === 'truefalse') {
-                const isTrue = q.correct && q.correct.includes('True');
-                box.innerHTML = `
-                    <label class="d-flex align-items-center gap-2 mb-1"><input type="radio" name="tf_${idx}" class="q-correct" value="True" ${isTrue ? 'checked' : ''}> True</label>
-                    <label class="d-flex align-items-center gap-2"><input type="radio" name="tf_${idx}" class="q-correct" value="False" ${!isTrue ? 'checked' : ''}> False</label>`;
-            } else {
-                const inputType = q.type === 'multiple' ? 'checkbox' : 'radio';
-                let html = '';
-                for (let oIdx = 0; oIdx < 4; oIdx++) {
-                    const optVal = q.options[oIdx] || '';
-                    const isChecked = q.correct && q.correct.includes(optVal) ? 'checked' : '';
-                    html += `<div class="d-flex align-items-center gap-2 mb-1">
-                        <input type="${inputType}" name="opt_${idx}" class="q-correct" value="${oIdx}" ${isChecked}>
-                        <input class="form-control q-opt" placeholder="Option ${oIdx + 1}" value="${optVal.replace(/"/g, '&quot;')}">
-                    </div>`;
-                }
-                box.innerHTML = html + '<small class="text-muted">Tick the correct option(s).</small>';
-            }
-        });
-
-        document.getElementById('examModalTitle').textContent = 'Edit MCQ Exam';
-        openModal(document.getElementById('examModal'));
-    };
-
-    window.deleteExam = async function (id) {
-        if (!canAuthorExams) return;
-        if (confirm('Delete this exam?')) {
-            const res = await db.deleteExam(id);
-            if (res.success) renderMCQ();
-        }
-    };
-
-    window.viewExamReport = function (examId) {
-        activeReportExamId = examId;
-        const exam = db.getExams().find(e => e.id === examId);
-        if (!exam) return;
-
-        document.getElementById('reportExamTitle').textContent = `Report: ${exam.title}`;
-        document.getElementById('examListPanel').classList.add('hidden');
-        document.getElementById('examReportPanel').classList.remove('hidden');
-
-        // Populate course filter
-        const students = db.getStudents();
-        const courses = [...new Set(students.map(s => s.course).filter(Boolean))].sort();
-        const courseFilter = document.getElementById('reportCourseFilter');
-        courseFilter.innerHTML = '<option value="">All Courses</option>' + 
-            courses.map(c => `<option value="${c}">${c}</option>`).join('');
-
-        filterExamReport();
-    };
-
-    window.closeExamReport = function () {
-        document.getElementById('examListPanel').classList.remove('hidden');
-        document.getElementById('examReportPanel').classList.add('hidden');
-        activeReportExamId = null;
-    };
-
-    window.toggleFilter = function(containerId) {
-        // Close others
-        ['searchFilterContainer', 'courseFilterContainer', 'statusFilterContainer'].forEach(id => {
-            if (id !== containerId) {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'none';
-            }
-        });
-        const container = document.getElementById(containerId);
-        if (container) {
-            container.style.display = container.style.display === 'none' ? 'block' : 'none';
-            if (container.style.display === 'block') {
-                const input = container.querySelector('input, select');
-                if (input) input.focus();
-            }
-        }
-    };
-
-    // Close filters when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('th')) {
-            ['searchFilterContainer', 'courseFilterContainer', 'statusFilterContainer'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'none';
-            });
-        }
-    });
-
-    window.filterExamReport = function () {
-        if (!activeReportExamId) return;
-        const exam = db.getExams().find(e => e.id === activeReportExamId);
-        if (!exam) return;
-
-        const students = db.getStudents();
-        const attempts = db.getExamAttempts().filter(a => a.exam_id === activeReportExamId);
-        
-        // Filter targeted students
-        const targetedStudents = students.filter(s => {
-            const t = exam.target || { type: 'all' };
-            if (!t || t.type === 'all') return true;
-            const studentCourse = (s.course || '').trim().toLowerCase();
-            const studentClass = (s.class || '').trim().toLowerCase();
-            const matchesCourse = t.courses && t.courses.length > 0 && t.courses.map(x => x.trim().toLowerCase()).includes(studentCourse);
-            const matchesClass = t.classes && t.classes.length > 0 && t.classes.map(x => x.trim().toLowerCase()).includes(studentClass);
-            if (t.courses && t.courses.length > 0 && t.classes && t.classes.length > 0) {
-                return matchesCourse || matchesClass;
-            } else if (t.courses && t.courses.length > 0) {
-                return matchesCourse;
-            } else if (t.classes && t.classes.length > 0) {
-                return matchesClass;
-            }
-            return true;
-        });
-
-        const courseVal = document.getElementById('reportCourseFilter').value;
-        const statusVal = document.getElementById('reportStatusFilter').value;
-        const searchVal = document.getElementById('reportSearchStudent').value.toLowerCase().trim();
-
-        const totalMarks = (exam.questions || []).reduce((a, q) => a + (Number(q.marks) || 0), 0);
-
-        const tbody = document.querySelector('#examReportTable tbody');
-        tbody.innerHTML = '';
-
-        // KPI Calculations
-        const totalAttempts = attempts.length;
-        const uniqueStudents = new Set(attempts.map(a => a.register_number)).size;
-        const retakes = totalAttempts > uniqueStudents ? totalAttempts - uniqueStudents : 0;
-
-        document.getElementById('kpiTotalAttempts').textContent = totalAttempts;
-        document.getElementById('kpiUniqueStudents').textContent = uniqueStudents;
-        document.getElementById('kpiRetakes').textContent = retakes;
-
-        let deptCounts = {};
-
-        const rows = targetedStudents.map(s => {
-            const attempt = attempts.find(a => a.register_number === s.registerNumber);
-            const done = attempt != null;
-            if (!done) return null; // Only show students who attended
-
-            const score = attempt.score;
-            const passed = attempt.passed;
-            const dateStr = new Date(attempt.submitted_at).toLocaleString();
-
-            let status = passed ? 'Passed' : 'Failed';
-            let statusClass = passed ? 'bg-success text-white' : 'bg-danger text-white';
-
-            // Filters
-            if (courseVal && s.course !== courseVal) return null;
-            if (searchVal && !s.name.toLowerCase().includes(searchVal) && !s.registerNumber.toLowerCase().includes(searchVal)) return null;
-            if (statusVal) {
-                if (statusVal === 'passed' && !passed) return null;
-                if (statusVal === 'failed' && passed) return null;
-            }
-
-            // Track department attendance for chart
-            const dept = s.department || 'Unknown';
-            deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-
-            return `<tr>
-                <td><strong>${s.name}</strong></td>
-                <td>${s.registerNumber}</td>
-                <td>${s.course || '—'}</td>
-                <td>${s.class || '—'}</td>
-                <td><span class="badge ${statusClass}" style="padding:4px 8px; border-radius:6px; font-weight:700;">${status}</span></td>
-                <td>${score} / ${totalMarks}</td>
-                <td>${dateStr}</td>
-            </tr>`;
-        }).filter(Boolean).join('');
-
-        tbody.innerHTML = rows || '<tr><td colspan="7" class="text-center text-muted">No students found matching filters.</td></tr>';
-
-        // Update Chart
-        const ctx = document.getElementById('reportDeptChart');
-        if (window.reportDeptChartInst) {
-            window.reportDeptChartInst.destroy();
-        }
-        
-        if (Object.keys(deptCounts).length > 0) {
-            window.reportDeptChartInst = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(deptCounts),
-                    datasets: [{
-                        label: 'Students Attended',
-                        data: Object.values(deptCounts),
-                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                        borderColor: 'rgba(37, 99, 235, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                        }
-                    }
-                }
-            });
-        }
     };
 
     try {

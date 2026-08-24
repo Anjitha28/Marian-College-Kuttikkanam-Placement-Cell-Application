@@ -54,9 +54,9 @@
                     </a>
                 </li>
                 <li>
-                    <a class="sidebar-link tab" data-tab="training">
-                        <svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM3.89 9L12 4.58 20.11 9 12 13.42 3.89 9zM12 16c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                        Training
+                    <a class="sidebar-link tab" data-tab="placement">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        Placement Activities
                     </a>
                 </li>
                 <li>
@@ -66,24 +66,11 @@
                     </a>
                 </li>
                 <li>
-                    <a class="sidebar-link tab" data-tab="mcq">
-                        <svg viewBox="0 0 24 24"><path d="M3 3h18v2H3V3zm0 4h12v2H3V7zm0 4h18v2H3v-2zm0 4h12v2H3v-2zm0 4h18v2H3v-2z"/></svg>
-                        MCQ Exams
-                    </a>
-                </li>
-                <li>
                     <a class="sidebar-link tab" data-tab="calendar">
                         <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
                         Program Calendar
                     </a>
                 </li>
-                <li>
-                    <a class="sidebar-link tab" data-tab="placement">
-                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                        Placement Activities
-                    </a>
-                </li>
-
             </ul>
             <div class="sidebar-footer">
                 <div style="text-align: center; font-size: 11px; color: #888; margin-bottom: 10px; font-weight: 500;">
@@ -132,15 +119,6 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: #f3e8ff; color: #a855f7;">
-                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2.12-1.15V17h2V9L12 3z"/></svg>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-title">Total Trainings</span>
-                            <span class="stat-value" id="dashTotalTrainings">0</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
                         <div class="stat-icon" style="background: #e0f2fe; color: #0ea5e9;">
                             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg>
                         </div>
@@ -163,7 +141,7 @@
                 <!-- Main Overview Container -->
                 <div class="overview-grid-2">
                     <!-- Section 1: Placement Status -->
-                    <div class="overview-card">
+                    <div class="overview-card" style="grid-column: span 2;">
                         <div class="overview-header">
                             <div class="d-flex align-items-center gap-2">
                                 <svg viewBox="0 0 24 24" width="20" height="20" fill="#4b5563"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
@@ -184,31 +162,6 @@
                             <div class="legend-item"><span class="dot" style="background: #3b82f6;"></span><span style="color: #3b82f6;">Placed Students</span></div>
                             <div class="legend-item"><span class="dot" style="background: #10b981;"></span><span style="color: #10b981;">In Process</span></div>
                             <div class="legend-item"><span class="dot" style="background: #f59e0b;"></span><span style="color: #f59e0b;">Unplaced</span></div>
-                        </div>
-                    </div>
-
-                    <!-- Section 2: Training Status -->
-                    <div class="overview-card">
-                        <div class="overview-header">
-                            <div class="d-flex align-items-center gap-2">
-                                <svg viewBox="0 0 24 24" width="20" height="20" fill="#4b5563"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                                <h4 class="m-0" style="color: #374151; font-size: 1.1rem; font-weight: 600;">Training Status Overview</h4>
-                            </div>
-                            <span style="color: #6b7280; font-size: 0.9rem;" id="dashTrainingTotalText">Total: 0</span>
-                        </div>
-                        
-                        <div class="overview-chart-wrapper">
-                            <canvas id="trainingStatusChart"></canvas>
-                            <div class="chart-center-text" id="trainingChartCenter">
-                                <h2 style="margin: 0; font-size: 2rem; font-weight: 800; color: #111827;" id="trainingPercentText">0%</h2>
-                                <span style="font-size: 0.75rem; font-weight: 600; color: #6b7280; letter-spacing: 1px;">COMPLETED</span>
-                            </div>
-                        </div>
-
-                        <div class="overview-legend">
-                            <div class="legend-item"><span class="dot" style="background: #3b82f6;"></span><span style="color: #3b82f6;">Attending Trainings</span></div>
-                            <div class="legend-item"><span class="dot" style="background: #10b981;"></span><span style="color: #10b981;">Completed Trainings</span></div>
-                            <div class="legend-item"><span class="dot" style="background: #f59e0b;"></span><span style="color: #f59e0b;">Not Attending</span></div>
                         </div>
                     </div>
                 </div>
@@ -417,83 +370,6 @@
             </div> <!-- End padding div -->
             </div> <!-- End userManagementTab -->
             
-            <!-- Training Tab -->
-            <div id="trainingTab" class="tab-content glass-card premium-ui">
-                <div class="section-header">
-                    <div>
-                        <h3 style="margin-bottom: 0.25rem; color: #111827; font-size: 1.25rem;">Training Programs</h3>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-danger btn-sm" onclick="clearAllTrainingPrograms()" title="Delete all training programs">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                            Clear All
-                        </button>
-                        <button class="btn btn-primary btn-sm" id="toggleAddTrainingBtn">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                            Add Program
-                        </button>
-                    </div>
-                </div>
-
-                <div id="trainingAlert" class="alert hidden mb-3"></div>
-
-                
-
-                <!-- Training Programs Table -->
-                <div class="table-responsive">
-                    <table class="table" id="trainingTable">
-                        <thead>
-                            <tr>
-                                <th>Program</th>
-                                <th>Date & Days</th>
-                                <th>Registration Status</th>
-                                <th>Registered</th>
-                                <th>Attended</th>
-                                <th>Not Attended</th>
-                                <th>Completed</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Populated by JS -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Attendance Section (Initially Hidden) -->
-                <div id="attendanceSection" class="glass-card mt-4 hidden">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 id="attendanceTitle">Attendance Management</h4>
-                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('attendanceSection').classList.add('hidden')">Close</button>
-                    </div>
-                    <div id="attendanceControls" class="mb-3">
-                        <div class="dash-grid-3" style="gap: 1rem; align-items: end;">
-                            <div class="form-group mb-0">
-                                <label class="form-label">Select Day</label>
-                                <select id="attnDay" class="form-control">
-                                    <!-- Populated dynamically -->
-                                </select>
-                            </div>
-                            <div class="form-group mb-0">
-                                <label class="form-label">Session</label>
-                                <select id="attnSession" class="form-control">
-                                    <option value="morning">Morning</option>
-                                    <option value="evening">Evening</option>
-                                </select>
-                            </div>
-                            <div class="form-group mb-0">
-                                <input type="file" id="attnExcelFile" accept=".xlsx, .xls" class="form-control">
-                            </div>
-                        </div>
-                        <button class="btn btn-primary mt-3" id="uploadAttnBtn">Upload Attendance Excel</button>
-                    </div>
-                    <div id="registeredStudentsList" class="mt-4">
-                        <h5>Registered Students</h5>
-                        <div id="registrationsContainer"></div>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Class Tab -->
             <div id="classViewTab" class="tab-content premium-ui">
                 <div class="glass-card mb-4">
@@ -522,152 +398,12 @@
                 </div>
             </div>
 
-            <!-- MCQ Exams Tab -->
-            <div id="mcqTab" class="tab-content glass-card premium-ui">
-                <!-- Exam List Panel -->
-                <div id="examListPanel">
-                    <div class="section-header">
-                        <div>
-                            <h3 style="margin-bottom:0.25rem; color:#111827; font-size:1.25rem;">MCQ Exams</h3>
-                            <p style="color:#6b7280; font-size:0.875rem; margin:0;">Create and assign on-platform exams.</p>
-                        </div>
-                        <div class="d-flex gap-2" id="mcqActionBtns">
-                            <button class="btn btn-primary btn-sm" onclick="openExamBuilder()">+ Create Exam</button>
-                        </div>
-                    </div>
-                    <div id="mcqAlert" class="alert hidden mb-3"></div>
-                    <div class="table-responsive">
-                        <table class="table" id="examTable">
-                        <thead><tr><th>Exam</th><th>Questions</th><th>Total Marks</th><th>Pass Mark</th><th>Duration</th><th>Actions</th></tr></thead>
-                        <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Exam Report Panel (hidden by default) -->
-                <div id="examReportPanel" class="hidden">
-                    <div class="section-header">
-                        <div>
-                            <h3 style="margin-bottom:0.25rem; color:#111827; font-size:1.25rem;" id="reportExamTitle">Exam Report</h3>
-                            <p style="color:#6b7280; font-size:0.875rem; margin:0;">Detailed performance summary for students.</p>
-                        </div>
-                        <button class="btn btn-secondary btn-sm" onclick="closeExamReport()">← Back to Exams</button>
-                    </div>
-                    
-                    <!-- KPI Cards -->
-                    <div class="dash-grid-3" style="gap: 1rem; margin-bottom: 1.5rem;">
-                        <div class="glass-card" style="padding: 1rem; text-align: center; border-left: 4px solid #3b82f6;">
-                            <div style="font-size: 0.85rem; color: #6b7280; font-weight: 600; text-transform: uppercase;">Total Exam Attempts</div>
-                            <div style="font-size: 1.5rem; color: #1e3a8a; font-weight: 700; margin-top: 0.5rem;" id="kpiTotalAttempts">0</div>
-                        </div>
-                        <div class="glass-card" style="padding: 1rem; text-align: center; border-left: 4px solid #10b981;">
-                            <div style="font-size: 0.85rem; color: #6b7280; font-weight: 600; text-transform: uppercase;">Unique Students</div>
-                            <div style="font-size: 1.5rem; color: #065f46; font-weight: 700; margin-top: 0.5rem;" id="kpiUniqueStudents">0</div>
-                        </div>
-                        <div class="glass-card" style="padding: 1rem; text-align: center; border-left: 4px solid #f59e0b;">
-                            <div style="font-size: 0.85rem; color: #6b7280; font-weight: 600; text-transform: uppercase;">Exam Retakes</div>
-                            <div style="font-size: 1.5rem; color: #92400e; font-weight: 700; margin-top: 0.5rem;" id="kpiRetakes">0</div>
-                        </div>
-                    </div>
-
-                    <!-- Department Chart -->
-                    <div class="glass-card mb-4" style="padding: 1.5rem;">
-                        <h4 style="font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 1rem;">Students Attended by Department</h4>
-                        <div style="height: 250px; position: relative;">
-                            <canvas id="reportDeptChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table" id="examReportTable">
-                            <thead>
-                                <tr>
-                                    <th style="cursor: pointer; position: relative;" onclick="toggleFilter('searchFilterContainer')">
-                                        <div class="d-flex align-items-center gap-1">Student Name <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></div>
-                                        <div id="searchFilterContainer" style="display: none; position: absolute; top: 100%; left: 0; z-index: 10; background: white; padding: 5px; border: 1px solid #e5e7eb; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                                            <input type="text" id="reportSearchStudent" class="form-control form-control-sm" placeholder="Search..." oninput="filterExamReport()" onclick="event.stopPropagation()" style="font-weight: normal; min-width: 150px;">
-                                        </div>
-                                    </th>
-                                    <th style="vertical-align: top;">Register Number</th>
-                                    <th style="cursor: pointer; position: relative;" onclick="toggleFilter('courseFilterContainer')">
-                                        <div class="d-flex align-items-center gap-1">Course <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></div>
-                                        <div id="courseFilterContainer" style="display: none; position: absolute; top: 100%; left: 0; z-index: 10; background: white; padding: 5px; border: 1px solid #e5e7eb; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                                            <select id="reportCourseFilter" class="form-control form-control-sm" onchange="filterExamReport()" onclick="event.stopPropagation()" style="font-weight: normal; min-width: 130px;">
-                                                <option value="">All Courses</option>
-                                            </select>
-                                        </div>
-                                    </th>
-                                    <th style="vertical-align: top;">Class</th>
-                                    <th style="cursor: pointer; position: relative;" onclick="toggleFilter('statusFilterContainer')">
-                                        <div class="d-flex align-items-center gap-1">Status <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></div>
-                                        <div id="statusFilterContainer" style="display: none; position: absolute; top: 100%; left: 0; z-index: 10; background: white; padding: 5px; border: 1px solid #e5e7eb; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                                            <select id="reportStatusFilter" class="form-control form-control-sm" onchange="filterExamReport()" onclick="event.stopPropagation()" style="font-weight: normal; min-width: 130px;">
-                                                <option value="">All Statuses</option>
-                                                <option value="passed">Passed</option>
-                                                <option value="failed">Failed</option>
-                                            </select>
-                                        </div>
-                                    </th>
-                                    <th style="vertical-align: top;">Score</th>
-                                    <th style="vertical-align: top;">Submitted At</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    </div>
-                </div>
-
-            <!-- Exam Builder Modal -->
-            <div id="examModal" class="hidden premium-ui" style="position:fixed; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center; z-index:1100;">
-                <div class="modal-content" style="background:#fff; width:820px; max-width:96vw; max-height:90vh; overflow:hidden; display:flex; flex-direction:column;">
-                    <div style="background:linear-gradient(135deg,#0a0f1c,#1d4ed8); color:#fff; padding:1.25rem 1.5rem; display:flex; justify-content:space-between; align-items:center;">
-                        <h4 style="margin:0; color:#fff;" id="examModalTitle">Create MCQ Exam</h4>
-                        <button class="btn" onclick="document.getElementById('examModal').classList.add('hidden')" style="background:rgba(255,255,255,0.2); color:#fff; border:none; border-radius:50%; width:34px; height:34px; padding:0;">✕</button>
-                    </div>
-                    <div style="padding:1.5rem; overflow-y:auto; flex:1; min-height:0;">
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-                            <div class="form-group mb-0"><label class="form-label">Exam Title</label><input id="exTitle" class="form-control" placeholder="e.g. Excel Basics Test"></div>
-                            <div class="form-group mb-0"><label class="form-label">Duration (minutes, 0 = untimed)</label><input id="exDuration" type="number" class="form-control" value="20" min="0"></div>
-                            <div class="form-group mb-0"><label class="form-label">Pass Mark (%)</label><input id="exPass" type="number" class="form-control" value="40" min="0"></div>
-                            <div class="form-group mb-0"><label class="form-label">Negative Mark / wrong (0 = none)</label><input id="exNeg" type="number" class="form-control" value="0" min="0" step="0.25"></div>
-                            <div class="form-group mb-0 d-flex align-items-center gap-2 mt-2"><input type="checkbox" id="exShuffleQuestions" style="width: 16px; height: 16px; cursor: pointer;"><label class="form-label mb-0" for="exShuffleQuestions" style="cursor: pointer; font-size: 0.85rem; font-weight: 600;">Shuffle Questions (Random order)</label></div>
-                            <div class="form-group mb-0 d-flex align-items-center gap-2 mt-2"><input type="checkbox" id="exShuffleOptions" style="width: 16px; height: 16px; cursor: pointer;"><label class="form-label mb-0" for="exShuffleOptions" style="cursor: pointer; font-size: 0.85rem; font-weight: 600;">Shuffle Options (Random choices)</label></div>
-                            
-                            <!-- Course Checkboxes -->
-                            <div class="form-group mb-0">
-                                <label class="form-label">Assign to Course(s)</label>
-                                <div id="exCoursesContainer" style="max-height: 120px; overflow-y: auto; border: 1px solid #cbd5e1; padding: 0.5rem; border-radius: 8px; background: #fff;"></div>
-                                <small class="text-muted">Leave blank to assign to all courses.</small>
-                            </div>
-                            
-                            <!-- Class Checkboxes -->
-                            <div class="form-group mb-0">
-                                <label class="form-label">Assign to Class(es)</label>
-                                <div id="exClassesContainer" style="max-height: 120px; overflow-y: auto; border: 1px solid #cbd5e1; padding: 0.5rem; border-radius: 8px; background: #fff;"></div>
-                                <small class="text-muted">Leave blank to assign to all classes.</small>
-                            </div>
-                        </div>
-                        <hr style="margin:1.25rem 0;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="mb-0">Questions</h5>
-                            <button class="btn btn-secondary btn-sm" onclick="addExamQuestion()">+ Add Question</button>
-                        </div>
-                        <div id="examQuestions"></div>
-                    </div>
-                    <div style="padding:1rem 1.5rem; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:0.5rem;">
-                        <button class="btn btn-secondary" onclick="document.getElementById('examModal').classList.add('hidden')">Cancel</button>
-                        <button class="btn btn-primary" onclick="saveExam()">Save Exam</button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Calendar Tab -->
             <div id="calendarTab" class="tab-content glass-card premium-ui">
                 <div class="section-header">
                     <div>
                         <h3 style="margin-bottom: 0.25rem; color: #111827; font-size: 1.25rem;">Program Calendar</h3>
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">Visual schedule of all training activities.</p>
+                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">Visual schedule of all placement activities.</p>
                     </div>
                     <div class="d-flex gap-2">
                         <select id="calMonth" class="form-control" style="width: 140px;"></select>
@@ -1100,85 +836,6 @@
                             <div class="premium-modal-footer">
                                 <button type="button" class="btn btn-secondary" id="cancelAddTeacherBtn" style="padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600;">Discard</button>
                                 <button type="submit" id="saveTeacherBtn" class="btn btn-primary" style="padding: 0.75rem 2.5rem; border-radius: 10px; font-weight: 600; background: #0D6EFC; box-shadow: 0 10px 15px -3px rgba(13, 110, 252, 0.3);">Save Teacher Profile</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-<!-- Training Modal (Pop-up) -->
-                <div id="trainingModal" class="premium-modal-wrapper hidden">
-                    <div class="premium-modal-card">
-                        <div class="premium-modal-header" style="padding-top: 2.25rem !important; padding-bottom: 1.75rem !important;">
-                            <h2 id="trainingModalTitle" style="margin-top: 0 !important; margin-bottom: 0.5rem !important; line-height: 1.4 !important; display: block !important;">Create New Training Program</h2>
-                            <p id="trainingModalSubtitle">Schedule and manage a new training activity.</p>
-                            <button type="button" class="premium-modal-close-btn" id="closeTrainingModalBtn" style="top: 1.75rem !important; right: 1.75rem !important;">✕</button>
-                        </div>
-                        <form id="addTrainingForm" class="premium-modal-form">
-                            <div class="premium-modal-body">
-                                <div class="dash-grid-2">
-                                    <div class="form-group mb-0">
-                                        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: #4b5563;">PROGRAM NAME</label>
-                                        <input type="text" id="trnName" class="form-control" required placeholder="e.g. Soft Skills Workshop" style="background: #f9fafb; border-color: #e5e7eb;">
-                                    </div>
-                                    <div class="form-group mb-0">
-                                        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: #4b5563;">VENUE</label>
-                                        <input type="text" id="trnVenue" class="form-control" required placeholder="e.g. Main Auditorium" style="background: #f9fafb; border-color: #e5e7eb;">
-                                    </div>
-                                    <div class="form-group mb-0">
-                                        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: #4b5563;">START DATE</label>
-                                        <input type="date" id="trnDate" class="form-control" required style="background: #f9fafb; border-color: #e5e7eb;">
-                                    </div>
-                                    <div class="form-group mb-0">
-                                        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: #4b5563;">END DATE</label>
-                                        <input type="date" id="trnEndDate" class="form-control" required style="background: #f9fafb; border-color: #e5e7eb;">
-                                    </div>
-
-                                    <div class="form-group mb-0" style="grid-column: span 2;">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <label class="form-label mb-0" style="font-weight: 600; font-size: 0.85rem; color: #4b5563;">DESCRIPTION</label>
-                                            <div class="formatting-toolbar d-flex gap-1">
-                                                <button type="button" class="btn btn-light btn-xs" onclick="insertFormat('trnDesc', 'b')" title="Bold" style="padding: 2px 8px; font-size: 10px; font-weight: 800; border: 1px solid #e5e7eb;">B</button>
-                                                <button type="button" class="btn btn-light btn-xs" onclick="insertFormat('trnDesc', 'i')" title="Italic" style="padding: 2px 8px; font-size: 10px; font-style: italic; border: 1px solid #e5e7eb;">I</button>
-                                                <button type="button" class="btn btn-light btn-xs" onclick="insertFormat('trnDesc', 'lg')" title="Large" style="padding: 2px 8px; font-size: 10px; border: 1px solid #e5e7eb;">A+</button>
-                                                <button type="button" class="btn btn-light btn-xs" onclick="insertFormat('trnDesc', 'sm')" title="Small" style="padding: 2px 8px; font-size: 10px; border: 1px solid #e5e7eb;">a-</button>
-                                                <button type="button" class="btn btn-light btn-xs" onclick="insertFormat('trnDesc', 'red')" title="Red" style="padding: 2px 8px; font-size: 10px; color: #dc2626; border: 1px solid #e5e7eb;">Red</button>
-                                                <button type="button" class="btn btn-light btn-xs" onclick="insertFormat('trnDesc', 'green')" title="Green" style="padding: 2px 8px; font-size: 10px; color: #16a34a; border: 1px solid #e5e7eb;">Grn</button>
-                                                <button type="button" class="btn btn-light btn-xs" onclick="insertFormat('trnDesc', 'blue')" title="Blue" style="padding: 2px 8px; font-size: 10px; color: #2563eb; border: 1px solid #e5e7eb;">Blu</button>
-                                                <button type="button" class="btn btn-light btn-xs" onclick="insertFormat('trnDesc', 'list')" title="Bullet List" style="padding: 2px 8px; font-size: 10px; border: 1px solid #e5e7eb;">• List</button>
-                                            </div>
-                                        </div>
-                                        <div id="trnDesc" contenteditable="true" class="form-control" style="background: #f9fafb; border-color: #e5e7eb; min-height: 100px; overflow-y: auto; cursor: text; padding: 0.75rem;"></div>
-                                        <small class="text-muted" style="font-size: 10px;">Use the buttons above to format your text. The view above shows the final appearance.</small>
-                                    </div>
-                                    <div class="form-group mb-0" style="grid-column: span 2;">
-                                        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: #4b5563;">TARGET AUDIENCE</label>
-                                        <div class="d-flex gap-3 align-items-center mb-2 mt-1">
-                                            <label style="cursor: pointer;"><input type="radio" name="targetType" value="all" checked class="mr-1"> All Students</label>
-                                            <label style="cursor: pointer;"><input type="radio" name="targetType" value="course" class="mr-1"> Specific Courses</label>
-                                            <label style="cursor: pointer;"><input type="radio" name="targetType" value="dept" class="mr-1"> Specific Departments</label>
-                                        </div>
-                                        
-                                        <!-- Courses Multi-select -->
-                                        <div id="courseFilterSection" class="hidden mt-2">
-                                            <label class="form-label small" style="color: var(--primary-color);">Select Courses</label>
-                                            <div id="trnCourseList" class="form-control" style="height: 120px; overflow-y: auto; background: #fff; padding: 0.75rem; border-color: #e5e7eb;">
-                                                <!-- Courses checkboxes injected here -->
-                                            </div>
-                                        </div>
-        
-                                        <!-- Departments Multi-select -->
-                                        <div id="deptFilterSection" class="hidden mt-2">
-                                            <label class="form-label small" style="color: var(--primary-color);">Select Departments</label>
-                                            <div id="trnDeptList" class="form-control" style="height: 120px; overflow-y: auto; background: #fff; padding: 0.75rem; border-color: #e5e7eb;">
-                                                <!-- Departments checkboxes injected here -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="premium-modal-footer">
-                                <button type="button" class="btn btn-secondary" id="cancelAddTrainingBtn" style="padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600;">Discard</button>
-                                <button type="submit" id="saveTrainingBtn" class="btn btn-primary" style="padding: 0.75rem 2.5rem; border-radius: 10px; font-weight: 600; background: #0D6EFC; box-shadow: 0 10px 15px -3px rgba(13, 110, 252, 0.3);">Create Program</button>
                             </div>
                         </form>
                     </div>
