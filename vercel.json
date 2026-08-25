@@ -1,6 +1,4 @@
 {
-  "version": 2,
-  "name": "marian-college-placement-cell",
   "cleanUrls": true,
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },

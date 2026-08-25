@@ -1,13 +1,10 @@
 {
   "name": "marian-college-placement-cell",
   "version": "1.0.0",
+  "private": true,
   "description": "Marian College Kuttikkanam Placement Cell Application",
   "scripts": {
     "start": "npx --yes http-server . -p 3001",
-    "dev": "npx --yes http-server . -p 3001",
-    "build": "echo 'Static build ready'"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.112.3"
+    "dev": "npx --yes http-server . -p 3001"
   }
 }
