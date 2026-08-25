@@ -89,14 +89,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    if (tabs) {
-        updateUsernameField(roleInput.value);
+    function handleTabSelect(tab) {
+        if (!tab) return;
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const role = tab.dataset.role || tab.getAttribute('data-role');
+        if (roleInput) roleInput.value = role;
+        updateUsernameField(role);
+    }
+
+    if (tabs && tabs.length > 0) {
+        if (roleInput) updateUsernameField(roleInput.value);
         tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                roleInput.value = tab.dataset.role;
-                updateUsernameField(tab.dataset.role);
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleTabSelect(tab);
             });
         });
     }
