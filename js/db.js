@@ -123,16 +123,16 @@ function toJSTrainingProgram(row) {
 function toSQLPlacementActivity(a) {
     if (!a) return null;
     return {
-        id: a.id,
-        name: a.name,
-        venue: a.venue,
-        date: a.date,
-        last_date: a.lastDate,
-        description: a.description,
-        type: a.type,
+        id: String(a.id),
+        name: a.name || a.company || 'Placement Activity',
+        venue: a.venue || '',
+        date: a.date || new Date().toISOString().split('T')[0],
+        last_date: a.lastDate || a.date || '',
+        description: a.description || '',
+        type: a.type || 'placement',
         target: a.target || { type: 'all' },
-        registrations: a.registrations || [],
-        phases: a.phases || []
+        registrations: Array.isArray(a.registrations) ? a.registrations : [],
+        phases: Array.isArray(a.phases) ? a.phases : []
     };
 }
 
@@ -374,10 +374,24 @@ class Database {
             return { success: true, message: 'Synced with cloud.' };
         } catch (e) {
             console.error(`Sync error for ${tableName}:`, e);
+            localStorage.setItem('db_cache', JSON.stringify(this.cache));
             if (e.message?.includes('API key')) {
                 this.cloudAvailable = false;
-                localStorage.setItem('db_cache', JSON.stringify(this.cache));
                 return { success: true, message: 'Saved locally.' };
+            }
+            const isNetworkError = e.name === 'TypeError' ||
+                e.message?.includes('Failed to fetch') ||
+                e.message?.includes('NetworkError') ||
+                e.message?.includes('Load failed') ||
+                e.message?.includes('network') ||
+                !navigator.onLine;
+
+            if (isNetworkError) {
+                console.warn(`[Offline Mode] Cloud sync unavailable (${e.message}). Saved locally.`);
+                if (typeof showToast === 'function') {
+                    showToast('Saved locally (offline mode).', 'info');
+                }
+                return { success: true, message: 'Saved locally (offline mode).' };
             }
             showToast(`Sync Error: ${e.message}`, 'error');
             return { success: false, message: e.message };
@@ -430,9 +444,19 @@ class Database {
             return { success: true };
         } catch (e) {
             console.error(`Delete error for ${tableName}:`, e);
+            localStorage.setItem('db_cache', JSON.stringify(this.cache));
             if (e.message?.includes('API key')) {
                 this.cloudAvailable = false;
-                localStorage.setItem('db_cache', JSON.stringify(this.cache));
+                return { success: true };
+            }
+            const isNetworkError = e.name === 'TypeError' ||
+                e.message?.includes('Failed to fetch') ||
+                e.message?.includes('NetworkError') ||
+                e.message?.includes('Load failed') ||
+                !navigator.onLine;
+
+            if (isNetworkError) {
+                console.warn(`[Offline Mode] Cloud delete unavailable (${e.message}). Deleted locally.`);
                 return { success: true };
             }
             showToast(`Delete Error: ${e.message}`, 'error');
@@ -719,12 +743,17 @@ class Database {
     }
 
     async addPlacementActivity(activity) {
-        activity.id = 'PLC' + Date.now();
-        activity.phases = [];
-        activity.registrations = [];
+        if (!activity.id) {
+            activity.id = 'PLC' + Date.now();
+        }
+        activity.phases = activity.phases || [];
+        activity.registrations = activity.registrations || [];
         this.cache.placementActivities.push(activity);
+        localStorage.setItem('db_cache', JSON.stringify(this.cache));
         const res = await this.sync("Activity", activity);
-        if (res.success) showToast('Placement drive created!', 'success');
+        if (res.success && (!res.message || !res.message.includes('locally'))) {
+            showToast('Placement drive created!', 'success');
+        }
         return res;
     }
 
@@ -732,15 +761,19 @@ class Database {
         const index = this.cache.placementActivities.findIndex(a => a.id === id);
         if (index !== -1) {
             this.cache.placementActivities[index] = { ...this.cache.placementActivities[index], ...updatedData };
+            localStorage.setItem('db_cache', JSON.stringify(this.cache));
             const res = await this.sync("Activity", this.cache.placementActivities[index]);
-            if (res.success) showToast('Placement activity updated!', 'success');
+            if (res.success && (!res.message || !res.message.includes('locally'))) {
+                showToast('Placement activity updated!', 'success');
+            }
             return res;
         }
-        return { success: false };
+        return { success: false, message: 'Activity not found.' };
     }
 
     async deletePlacementActivity(id) {
         this.cache.placementActivities = this.cache.placementActivities.filter(a => a.id !== id);
+        localStorage.setItem('db_cache', JSON.stringify(this.cache));
         const res = await this.deleteRecord("Activity", id);
         if (res.success) showToast('Placement activity deleted.', 'success');
         return res;

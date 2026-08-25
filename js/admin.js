@@ -1245,11 +1245,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 let result;
                 if (editingPlacementId) {
                     result = await db.updatePlacementActivity(editingPlacementId, activity);
-                    showPlacementAlert(result.message, result.success ? 'success' : 'danger');
+                    showPlacementAlert(result.message || 'Activity updated successfully.', result.success ? 'success' : 'danger');
                     if (result.success) editingPlacementId = null;
                 } else {
                     result = await db.addPlacementActivity(activity);
-                    showPlacementAlert(result.message, result.success ? 'success' : 'danger');
+                    showPlacementAlert(result.message || (currentPlacementType === 'recruitment' ? 'Recruitment drive created successfully.' : 'Placement activity created successfully.'), result.success ? 'success' : 'danger');
                 }
                 
                 if (result.success) {
