@@ -1,6 +1,7 @@
 {
   "version": 2,
   "name": "marian-college-placement-cell",
+  "cleanUrls": true,
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/teacher", "destination": "/teacher.html" },
@@ -8,5 +9,15 @@
     { "source": "/coordinator", "destination": "/coordinator.html" },
     { "source": "/login", "destination": "/index.html" },
     { "source": "/", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
+    }
   ]
 }
