@@ -49,6 +49,42 @@ body {
     overflow-y: auto;
 }
 
+/* Sidebar Logo Circular Container */
+.sidebar-logo-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    width: 100%;
+}
+
+.sidebar-logo-circle {
+    width: 84px;
+    height: 84px;
+    min-width: 84px;
+    min-height: 84px;
+    max-width: 84px;
+    max-height: 84px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    background-color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    box-sizing: border-box;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    flex-shrink: 0;
+}
+
+.sidebar-logo-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
 .main-content {
     flex: 1;
     margin-left: 250px;
