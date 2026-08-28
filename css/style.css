@@ -39,7 +39,7 @@ body {
 
 .sidebar {
     width: 250px;
-    background: linear-gradient(180deg, #0a0f1c 0%, #111d33 100%);
+    background: #9B0302;
     color: #ffffff;
     display: flex;
     flex-direction: column;
@@ -155,42 +155,47 @@ body {
 }
 
 .sidebar-link {
-    color: #e5e7eb !important;
-    /* Very light grey/white */
+    color: #ffffff !important;
     text-decoration: none;
     padding: 0.6rem 1rem;
-    border-radius: 20px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     gap: 0.75rem;
     font-weight: 500;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     cursor: pointer;
     font-size: 13px;
 }
 
-.sidebar-link:hover,
-.sidebar-link.active {
-    background: rgba(255, 255, 255, 0.2) !important;
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
     color: #ffffff !important;
-    /* Force white text */
+}
+
+.sidebar-link.active {
+    background: rgba(255, 255, 255, 0.24) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .sidebar-link svg {
     width: 16px;
     height: 16px;
-    fill: currentColor;
-    opacity: 0.7;
+    fill: #ffffff;
+    opacity: 0.85;
 }
 
 .sidebar-link.active svg {
     opacity: 1;
+    fill: #ffffff;
 }
 
 .sidebar-footer {
     margin-top: auto;
     padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .container {
@@ -1373,7 +1378,7 @@ select.form-control { cursor: pointer; }
 
 /* ---- Sidebar: solid active pill ---- */
 .sidebar {
-    background: linear-gradient(180deg, #0b1329 0%, #111a36 100%);
+    background: #9B0302;
     padding: 2rem 1.25rem;
 }
 .sidebar-brand {
@@ -1391,19 +1396,21 @@ select.form-control { cursor: pointer; }
     font-size: 0.875rem;
     padding: 0.65rem 1rem;
     margin-bottom: 0.25rem;
+    color: #ffffff !important;
     transition: var(--transition);
 }
 .sidebar-link:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
     color: #ffffff !important;
 }
 .sidebar-link.active {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%) !important;
+    background: rgba(255, 255, 255, 0.24) !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     font-weight: 600;
 }
-.sidebar-link.active svg { opacity: 1; }
+.sidebar-link svg { fill: #ffffff; }
+.sidebar-link.active svg { opacity: 1; fill: #ffffff; }
 
 /* ---- Tables ---- */
 .table thead th, .dash-table th { background: var(--surface-2); border-bottom: 1px solid var(--border-color); }
@@ -2111,10 +2118,66 @@ select.form-control { cursor: pointer; }
 .premium-ui .empty-state h5 { color: #334155; }
 
 /* ---------- Sidebar (portals) ---------- */
-.premium-ui .sidebar-link { border-radius: 12px; font-weight: 600; }
+.premium-ui .sidebar {
+    background: #9B0302 !important;
+}
+.premium-ui .sidebar-link { 
+    border-radius: 12px; 
+    font-weight: 600; 
+    color: #ffffff !important;
+}
+.premium-ui .sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+}
 .premium-ui .sidebar-link.active {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-    color: #fff !important; box-shadow: 0 10px 22px -10px rgba(29,78,216,.8);
+    background: rgba(255, 255, 255, 0.24) !important;
+    color: #ffffff !important; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.premium-ui .sidebar-link svg {
+    fill: #ffffff !important;
+}
+.premium-ui .sidebar-link.active svg {
+    fill: #ffffff !important;
+    opacity: 1 !important;
+}
+
+/* ---------- Sidebar Logout Button (Navy Blue #043570) ---------- */
+.btn-logout,
+.sidebar-footer .btn-logout,
+.sidebar-footer a.btn,
+.sidebar-footer a.btn-danger,
+.sidebar-footer .btn-danger {
+    background-color: #043570 !important;
+    background: #043570 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 8px rgba(4, 53, 112, 0.35) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.btn-logout:hover,
+.sidebar-footer .btn-logout:hover,
+.sidebar-footer a.btn:hover,
+.sidebar-footer a.btn-danger:hover,
+.sidebar-footer .btn-danger:hover {
+    background-color: #032a59 !important;
+    background: #032a59 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(4, 53, 112, 0.45) !important;
+}
+
+.btn-logout svg,
+.sidebar-footer .btn-logout svg,
+.sidebar-footer a.btn svg,
+.sidebar-footer a.btn-danger svg,
+.sidebar-footer .btn-danger svg {
+    fill: #ffffff !important;
+    color: #ffffff !important;
 }
 
 /* Missing flex utility — used by phase list, etc. (fixes cramped horizontal cards) */
