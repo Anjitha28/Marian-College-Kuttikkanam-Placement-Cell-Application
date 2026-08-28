@@ -1794,6 +1794,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
     window.openManagePlacementView = openManagePlacementView;
+    // Helper to navigate from calendar cards to appropriate manage sub-view
+    function openManageSubView(id) {
+        // Retrieve activity from cache
+        const activities = db.getPlacementActivities() || [];
+        const activity = activities.find(a => a.id === id);
+        if (!activity) {
+            console.warn('Activity not found for ID:', id);
+            return;
+        }
+        const isRec = (activity.type || 'placement') === 'recruitment';
+        // Activate Manage tab
+        activateTab('placement');
+        if (isRec) {
+            // Switch to Recruitment sub-tab
+            const recBtn = document.querySelector("button[data-subtab='recruitmentSubTab']");
+            if (recBtn) recBtn.click();
+        } else {
+            // Ensure Placement Activities sub-tab is active
+            const actBtn = document.querySelector("button[data-subtab='activitySubTab']");
+            if (actBtn) actBtn.click();
+        }
+        // Open the detailed view with default funnel/overview tab
+        openManagePlacementView(id, 'funnel', true, false);
+    }
+    window.openManageSubView = openManageSubView;
 
     window.closeManagePlacementView = (updateHash = true) => {
         currentActivityId = null;
