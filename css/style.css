@@ -166,6 +166,7 @@ body {
     transition: all 0.25s ease;
     cursor: pointer;
     font-size: 13px;
+    border-bottom: 2px solid transparent !important;
 }
 
 .sidebar-link:hover {
@@ -178,6 +179,8 @@ body {
     color: #ffffff !important;
     font-weight: 600;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-bottom: 2px solid #043570 !important;
+    border-bottom-color: #043570 !important;
 }
 
 .sidebar-link svg {
@@ -1398,6 +1401,7 @@ select.form-control { cursor: pointer; }
     margin-bottom: 0.25rem;
     color: #ffffff !important;
     transition: var(--transition);
+    border-bottom: 2px solid transparent !important;
 }
 .sidebar-link:hover {
     background: rgba(255, 255, 255, 0.15) !important;
@@ -1408,6 +1412,8 @@ select.form-control { cursor: pointer; }
     color: #ffffff !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     font-weight: 600;
+    border-bottom: 2px solid #043570 !important;
+    border-bottom-color: #043570 !important;
 }
 .sidebar-link svg { fill: #ffffff; }
 .sidebar-link.active svg { opacity: 1; fill: #ffffff; }
@@ -2125,15 +2131,20 @@ select.form-control { cursor: pointer; }
     border-radius: 12px; 
     font-weight: 600; 
     color: #ffffff !important;
+    border-bottom: 2px solid transparent !important;
 }
 .premium-ui .sidebar-link:hover {
     background: rgba(255, 255, 255, 0.15) !important;
     color: #ffffff !important;
 }
-.premium-ui .sidebar-link.active {
+.premium-ui .sidebar-link.active,
+.premium-ui .sidebar .tab.active,
+.premium-ui .sidebar-nav .tab.active {
     background: rgba(255, 255, 255, 0.24) !important;
     color: #ffffff !important; 
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-bottom: 2px solid #043570 !important;
+    border-bottom-color: #043570 !important;
 }
 .premium-ui .sidebar-link svg {
     fill: #ffffff !important;
