@@ -1063,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div style="font-size: 0.75rem; font-weight: 600; color: ${color}; text-transform: uppercase; margin-bottom: 4px;">${isRec ? 'Recruitment Drive' : 'Placement Activity'}</div>
                         <h5 style="margin: 0 0 4px 0; font-size: 1rem; color: #111827;">${a.name || a.company || 'Placement Event'}</h5>
                         ${a.description ? `<div style="margin: 0 0 8px 0; font-size: 0.85rem; color: #4b5563; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${a.description}</div>` : ''}
-                        <button class="btn btn-sm mt-2" style="border: 1px solid ${color}; color: ${color}; background: transparent;" onclick="activateTab('placement'); openManageSubView('${a.id}')">View Details</button>
+                        <button class="btn btn-sm mt-2" style="border: 1px solid ${color}; color: ${color}; background: transparent; cursor: pointer;" onclick="openManageSubView('${a.id}')">View Details</button>
                     </div>
                 `;
             });
@@ -1759,14 +1759,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (uiOnly) return; // Skip data fetching if only UI state is requested
 
         const activities = db.getPlacementActivities() || [];
-        currentActivity = activities.find(a => a.id === id);
+        currentActivity = activities.find(a => String(a.id) === String(id));
         
         if (!currentActivity) {
             console.warn("Placement activity not found in cache for ID:", id);
             document.getElementById('manageActivityTitle').textContent = "Loading Activity...";
             setTimeout(() => {
                 const refreshedActivities = db.getPlacementActivities() || [];
-                currentActivity = refreshedActivities.find(a => a.id === id);
+                currentActivity = refreshedActivities.find(a => String(a.id) === String(id));
                 if (currentActivity) {
                     window.openManagePlacementView(id, subTab, updateHash, false);
                 } else {
@@ -1796,27 +1796,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.openManagePlacementView = openManagePlacementView;
     // Helper to navigate from calendar cards to appropriate manage sub-view
     function openManageSubView(id) {
-        // Retrieve activity from cache
+        if (!id) return;
         const activities = db.getPlacementActivities() || [];
-        const activity = activities.find(a => a.id === id);
-        if (!activity) {
-            console.warn('Activity not found for ID:', id);
-            return;
+        const activity = activities.find(a => String(a.id) === String(id));
+        const isRec = activity && (activity.type || 'placement') === 'recruitment';
+        
+        // Pre-set list sub-tab for when returning to list
+        const targetSubTabId = isRec ? 'recruitmentSubTab' : 'activitySubTab';
+        const pSubTabBtn = document.querySelector(`.p-sub-tab[data-subtab="${targetSubTabId}"]`);
+        if (pSubTabBtn) {
+            document.querySelectorAll('.p-sub-tab').forEach(t => t.classList.remove('active'));
+            pSubTabBtn.classList.add('active');
+            const actSub = document.getElementById('activitySubTab');
+            const recSub = document.getElementById('recruitmentSubTab');
+            if (actSub) actSub.classList.toggle('hidden', isRec);
+            if (recSub) recSub.classList.toggle('hidden', !isRec);
         }
-        const isRec = (activity.type || 'placement') === 'recruitment';
-        // Activate Manage tab
-        activateTab('placement');
-        if (isRec) {
-            // Switch to Recruitment sub-tab
-            const recBtn = document.querySelector("button[data-subtab='recruitmentSubTab']");
-            if (recBtn) recBtn.click();
-        } else {
-            // Ensure Placement Activities sub-tab is active
-            const actBtn = document.querySelector("button[data-subtab='activitySubTab']");
-            if (actBtn) actBtn.click();
-        }
-        // Open the detailed view with default funnel/overview tab
-        openManagePlacementView(id, 'funnel', true, false);
+
+        // Navigate directly to manage sub-view under placement
+        window.location.hash = `placement/manage/${id}/funnel`;
     }
     window.openManageSubView = openManageSubView;
 
