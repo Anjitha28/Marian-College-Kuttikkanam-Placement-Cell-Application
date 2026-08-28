@@ -39,7 +39,7 @@ body {
 
 .sidebar {
     width: 250px;
-    background: #9B0302;
+    background: #850202;
     color: #ffffff;
     display: flex;
     flex-direction: column;
@@ -1381,7 +1381,7 @@ select.form-control { cursor: pointer; }
 
 /* ---- Sidebar: solid active pill ---- */
 .sidebar {
-    background: #9B0302;
+    background: #850202;
     padding: 2rem 1.25rem;
 }
 .sidebar-brand {
@@ -2125,7 +2125,7 @@ select.form-control { cursor: pointer; }
 
 /* ---------- Sidebar (portals) ---------- */
 .premium-ui .sidebar {
-    background: #9B0302 !important;
+    background: #850202 !important;
 }
 .premium-ui .sidebar-link { 
     border-radius: 12px; 
@@ -2154,19 +2154,19 @@ select.form-control { cursor: pointer; }
     opacity: 1 !important;
 }
 
-/* ---------- Sidebar Logout Button (Navy Blue #043570) ---------- */
+/* ---------- Sidebar Logout Button (Dark Navy #0B1426) ---------- */
 .btn-logout,
 .sidebar-footer .btn-logout,
 .sidebar-footer a.btn,
 .sidebar-footer a.btn-danger,
 .sidebar-footer .btn-danger {
-    background-color: #043570 !important;
-    background: #043570 !important;
+    background-color: #0B1426 !important;
+    background: #0B1426 !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
-    box-shadow: 0 2px 8px rgba(4, 53, 112, 0.35) !important;
+    box-shadow: 0 2px 8px rgba(11, 20, 38, 0.35) !important;
     transition: all 0.2s ease-in-out !important;
 }
 
@@ -2175,11 +2175,11 @@ select.form-control { cursor: pointer; }
 .sidebar-footer a.btn:hover,
 .sidebar-footer a.btn-danger:hover,
 .sidebar-footer .btn-danger:hover {
-    background-color: #032a59 !important;
-    background: #032a59 !important;
+    background-color: #070d19 !important;
+    background: #070d19 !important;
     color: #ffffff !important;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(4, 53, 112, 0.45) !important;
+    box-shadow: 0 4px 12px rgba(11, 20, 38, 0.45) !important;
 }
 
 .btn-logout svg,
